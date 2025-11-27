@@ -18,7 +18,9 @@ type User struct {
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	UserRoles    []UserRole     `gorm:"foreignKey:UserID" json:"user_roles"`
+
+	// Relationship
+	UserRoles []UserRole `gorm:"foreignKey:UserID" json:"user_roles"`
 }
 
 // UserResponse represents user data for API responses
