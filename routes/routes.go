@@ -5,6 +5,7 @@ import (
 	"livo-backend/config"
 	"livo-backend/controllers"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -25,28 +26,28 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization")
 	router.Use(cors.New(corsConfig))
-	// corsConfig := cors.Config{
-	// 	AllowOrigins: strings.Split(cfg.CORSAllowedOrigins, ","),
-	// 	AllowMethods: strings.Split(cfg.CORSAllowedMethods, ","),
-	// 	AllowHeaders: []string{
-	// 		"Origin",
-	// 		"Content-Length",
-	// 		"Content-Type",
-	// 		"Authorization",
-	// 		"Accept",
-	// 		"X-Requested-With",
-	// 	},
-	// 	ExposeHeaders: []string{
-	// 		"Content-Length",
-	// 		"Content-Type",
-	// 	},
-	// 	AllowCredentials: true,
-	// 	MaxAge:           12 * time.Hour,
-	// }
-	// router.Use(cors.New(corsConfig))
+	corsConfig = cors.Config{
+		AllowOrigins: strings.Split(cfg.CORSAllowedOrigins, ","),
+		AllowMethods: strings.Split(cfg.CORSAllowedMethods, ","),
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Length",
+			"Content-Type",
+			"Authorization",
+			"Accept",
+			"X-Requested-With",
+		},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"Content-Type",
+		},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	router.Use(cors.New(corsConfig))
 
 	// Set trusted proxies for security
-	// router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	router.SetTrustedProxies([]string{"127.0.0.1", "192.168.31.52", "192.168.31.53", "192.168.31.54", "192.168.31.55", "::1"})
 
 	// Serve static files from static directory
 	router.Static("/static", "./static")

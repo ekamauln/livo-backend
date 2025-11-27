@@ -22,7 +22,7 @@ func NewBoxController(db *gorm.DB) *BoxController {
 
 // GetBoxes godoc
 // @Summary Get all boxes
-// @Description Get list of all boxes (logged-in users only)
+// @Description Get list of all boxes.
 // @Tags boxes
 // @Accept json
 // @Produce json
@@ -92,7 +92,7 @@ func (bc *BoxController) GetBoxes(c *gin.Context) {
 
 // GetBox godoc
 // @Summary Get box by ID
-// @Description Get box details by ID (logged-in users only)
+// @Description Get box details by ID.
 // @Tags boxes
 // @Accept json
 // @Produce json
@@ -117,7 +117,7 @@ func (bc *BoxController) GetBox(c *gin.Context) {
 
 // UpdateBox godoc
 // @Summary Update box
-// @Description Update box information (logged-in users only)
+// @Description Update box information.
 // @Tags boxes
 // @Accept json
 // @Produce json
@@ -166,7 +166,7 @@ func (bc *BoxController) UpdateBox(c *gin.Context) {
 
 // RemoveBox godoc
 // @Summary Remove box
-// @Description Soft delete a box (logged-in users only)
+// @Description Soft delete a box.
 // @Tags boxes
 // @Accept json
 // @Produce json
@@ -196,7 +196,7 @@ func (bc *BoxController) RemoveBox(c *gin.Context) {
 
 // CreateBox godoc
 // @Summary Create new box
-// @Description Create a new box (logged-in users only)
+// @Description Create a new box.
 // @Tags boxes
 // @Accept json
 // @Produce json
