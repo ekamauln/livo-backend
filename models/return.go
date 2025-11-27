@@ -74,8 +74,8 @@ type ReturnResponse struct {
 	Store   *StoreResponse   `json:"store,omitempty"`
 }
 
-// ReturnMobileResponse is a simplified response for mobile use
-type ReturnMobileResponse struct {
+// MobileReturnResponse is a simplified response for mobile use
+type MobileReturnResponse struct {
 	ID        uint      `json:"id"`
 	Tracking  string    `json:"tracking"`
 	ChannelID uint      `json:"channel_id"`
@@ -156,9 +156,9 @@ func ToReturnResponses(returns []Return) []ReturnResponse {
 	return responses
 }
 
-// ToReturnMobileResponse converts Return model to ReturnMobileResponse
-func (r *Return) ToReturnMobileResponse() ReturnMobileResponse {
-	response := ReturnMobileResponse{
+// ToMobileReturnResponse converts Return model to MobileReturnResponse
+func (r *Return) ToMobileReturnResponse() MobileReturnResponse {
+	response := MobileReturnResponse{
 		ID:        r.ID,
 		Tracking:  r.NewTracking,
 		ChannelID: r.ChannelID,

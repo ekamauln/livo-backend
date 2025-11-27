@@ -1707,6 +1707,169 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/mobile/returns": {
+            "get": {
+                "description": "Get list of mobile returns from the last 7 days (public access, no login required)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Get all returns by mobile",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by return mobile tracking (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.MobileReturnsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new return mobile (public access, no login required)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Create a new return mobile",
+                "parameters": [
+                    {
+                        "description": "Create return mobile request",
+                        "name": "mobile_return",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateMobileReturnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.MobileReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mobile/returns/{id}": {
+            "get": {
+                "description": "Get a return mobile by ID (public access, no login required).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Get a return mobile by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Return ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.MobileReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/mobile/stores": {
             "get": {
                 "description": "Get list of all stores.",
@@ -3712,6 +3875,396 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/returns": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all returns with optional date range filtering and search.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Get all returns",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by return new tracking (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.ReturnsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new base return.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Create a new base return",
+                "parameters": [
+                    {
+                        "description": "Create Base Return Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateBaseReturnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/returns/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get return details by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Get return by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Return ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/returns/{id}/admin": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update return admin data and sync product details from order (logged in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Update return admin data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Return ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Admin Return Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateAdminReturnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/returns/{id}/data": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update return data and sync product details from order.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "returns"
+                ],
+                "summary": "Update return data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Return ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Data Return Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateDataReturnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ReturnResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/ribbons/qc-ribbons": {
             "get": {
                 "security": [
@@ -5330,6 +5883,25 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.CreateBaseReturnRequest": {
+            "type": "object",
+            "required": [
+                "channel_id",
+                "new_tracking",
+                "store_id"
+            ],
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "new_tracking": {
+                    "type": "string"
+                },
+                "store_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "controllers.CreateBoxRequest": {
             "type": "object",
             "required": [
@@ -5379,6 +5951,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.CreateMobileReturnRequest": {
+            "type": "object",
+            "required": [
+                "channel_id",
+                "store_id",
+                "tracking"
+            ],
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "store_id": {
+                    "type": "integer"
+                },
+                "tracking": {
                     "type": "string"
                 }
             }
@@ -5860,6 +6451,20 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.MobileReturnsListResponse": {
+            "type": "object",
+            "properties": {
+                "mobile_returns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MobileReturnResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                }
+            }
+        },
         "controllers.MobileStoresListResponse": {
             "type": "object",
             "properties": {
@@ -6292,6 +6897,20 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.ReturnsListResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                },
+                "returns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ReturnResponse"
+                    }
+                }
+            }
+        },
         "controllers.RibbonFlowResponse": {
             "type": "object",
             "properties": {
@@ -6399,6 +7018,33 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.UpdateAdminReturnRequest": {
+            "type": "object",
+            "required": [
+                "old_tracking",
+                "return_number",
+                "return_reason",
+                "return_type",
+                "scrap_number"
+            ],
+            "properties": {
+                "old_tracking": {
+                    "type": "string"
+                },
+                "return_number": {
+                    "type": "string"
+                },
+                "return_reason": {
+                    "type": "string"
+                },
+                "return_type": {
+                    "type": "string"
+                },
+                "scrap_number": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.UpdateBoxRequest": {
             "type": "object",
             "required": [
@@ -6438,6 +7084,25 @@ const docTemplate = `{
                 "complained": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "controllers.UpdateDataReturnRequest": {
+            "type": "object",
+            "required": [
+                "old_tracking",
+                "return_reason",
+                "return_type"
+            ],
+            "properties": {
+                "old_tracking": {
+                    "type": "string"
+                },
+                "return_reason": {
+                    "type": "string"
+                },
+                "return_type": {
+                    "type": "string"
                 }
             }
         },
@@ -6660,6 +7325,40 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "slug": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MobileReturnResponse": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "description": "Related data",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ChannelResponse"
+                        }
+                    ]
+                },
+                "channel_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "store": {
+                    "$ref": "#/definitions/models.StoreResponse"
+                },
+                "store_id": {
+                    "type": "integer"
+                },
+                "tracking": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -7029,6 +7728,93 @@ const docTemplate = `{
                 },
                 "tracking": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ReturnDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "product": {
+                    "$ref": "#/definitions/models.ProductResponse"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "return_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ReturnResponse": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "$ref": "#/definitions/models.ChannelResponse"
+                },
+                "channel_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "new_tracking": {
+                    "type": "string"
+                },
+                "old_tracking": {
+                    "type": "string"
+                },
+                "order": {
+                    "description": "Related data",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.OrderResponse"
+                        }
+                    ]
+                },
+                "order_ginee_id": {
+                    "type": "string"
+                },
+                "return_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ReturnDetailResponse"
+                    }
+                },
+                "return_number": {
+                    "type": "string"
+                },
+                "return_reason": {
+                    "type": "string"
+                },
+                "return_type": {
+                    "type": "string"
+                },
+                "scrap_number": {
+                    "type": "string"
+                },
+                "store": {
+                    "$ref": "#/definitions/models.StoreResponse"
+                },
+                "store_id": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
