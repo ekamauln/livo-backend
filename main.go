@@ -46,11 +46,13 @@ func main() {
 	mobileChannelController := controllers.NewMobileChannelController(db)
 	expeditionController := controllers.NewExpeditionController(db)
 	productController := controllers.NewProductController(db)
+	storeController := controllers.NewStoreController(db)
+	mobileStoreController := controllers.NewMobileStoreController(db)
 	log.Println("✓ Controllers initialized successfully")
 
 	// Setup routes
 	log.Println("🛣️  Setting up routes...")
-	router := routes.SetupRoutes(cfg, authController, userManagerController, boxController, channelController, mobileChannelController, expeditionController, productController)
+	router := routes.SetupRoutes(cfg, authController, userManagerController, boxController, channelController, mobileChannelController, expeditionController, productController, storeController, mobileStoreController)
 	log.Println("✓ Routes configured successfully")
 
 	// Build API URL from config
