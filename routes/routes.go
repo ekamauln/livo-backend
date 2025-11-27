@@ -15,7 +15,7 @@ import (
 )
 
 // SetupRoutes configures all routes for the application
-func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController) *gin.Engine {
+func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController, outboundController *controllers.OutboundController) *gin.Engine {
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
 
@@ -179,6 +179,7 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	SetupQcOnlineRoutes(api, cfg, qcOnlineController)
 	SetupOnlineFlowRoutes(api, cfg, onlineFlowController)
 	SetupPickedOrderRoutes(api, cfg, pickedOrderController)
+	SetupOutboundRoutes(api, cfg, outboundController)
 
 	return router
 }

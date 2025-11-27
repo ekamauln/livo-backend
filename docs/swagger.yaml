@@ -162,6 +162,19 @@ definitions:
     - order_ginee_id
     - store
     type: object
+  controllers.CreateOutboundRequest:
+    properties:
+      expedition:
+        type: string
+      expedition_color:
+        type: string
+      expedition_slug:
+        type: string
+      tracking:
+        type: string
+    required:
+    - tracking
+    type: object
   controllers.CreateProductRequest:
     properties:
       barcode:
@@ -508,6 +521,38 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.OutboundsDailyCount:
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
+    type: object
+  controllers.OutboundsDailyCountResponse:
+    properties:
+      daily_counts:
+        items:
+          $ref: '#/definitions/controllers.OutboundsDailyCount'
+        type: array
+      month:
+        description: e.g., "November"
+        type: string
+      total_count:
+        description: Total for the month
+        type: integer
+      year:
+        description: e.g., 2023
+        type: integer
+    type: object
+  controllers.OutboundsListResponse:
+    properties:
+      outbounds:
+        items:
+          $ref: '#/definitions/models.OutboundResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
   controllers.PickedOrdersListResponse:
     properties:
       pagination:
@@ -803,6 +848,19 @@ definitions:
     - quantity
     - sku
     type: object
+  controllers.UpdateOutboundRequest:
+    properties:
+      expedition:
+        type: string
+      expedition_color:
+        type: string
+      expedition_slug:
+        type: string
+    required:
+    - expedition
+    - expedition_color
+    - expedition_slug
+    type: object
   controllers.UpdateProductRequest:
     properties:
       barcode:
@@ -966,6 +1024,33 @@ definitions:
         type: string
       store:
         type: string
+      tracking:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.OutboundResponse:
+    properties:
+      complained:
+        type: boolean
+      created_at:
+        type: string
+      expedition:
+        type: string
+      expedition_color:
+        type: string
+      expedition_slug:
+        type: string
+      id:
+        type: integer
+      order:
+        allOf:
+        - $ref: '#/definitions/models.OrderResponse'
+        description: Related data
+      outbound_by:
+        type: integer
+      outbound_operator:
+        $ref: '#/definitions/models.UserResponse'
       tracking:
         type: string
       updated_at:
@@ -2941,6 +3026,214 @@ paths:
       summary: Bulk create orders
       tags:
       - orders
+  /api/outbounds:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all outbounds.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by outbound tracking (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OutboundsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all outbounds
+      tags:
+      - outbounds
+    post:
+      consumes:
+      - application/json
+      description: Create a new outbound with automatic expedition detection.
+      parameters:
+      - description: Create Outbound Request
+        in: body
+        name: outbound
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateOutboundRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OutboundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new outbound
+      tags:
+      - outbounds
+  /api/outbounds/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get specific outbound by ID.
+      parameters:
+      - description: Outbound ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OutboundResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get outbound by ID
+      tags:
+      - outbounds
+    put:
+      consumes:
+      - application/json
+      description: Update specific outbound information.
+      parameters:
+      - description: Outbound ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Outbound Request
+        in: body
+        name: outbound
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateOutboundRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OutboundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update outbound by ID
+      tags:
+      - outbounds
+  /api/outbounds/chart:
+    get:
+      consumes:
+      - application/json
+      description: Get daily count of outbounds for current month (for chart data).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OutboundsDailyCountResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get outbound counts per day for current month
+      tags:
+      - outbounds
   /api/picked-orders:
     get:
       consumes:

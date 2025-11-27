@@ -53,11 +53,12 @@ func main() {
 	qcOnlineController := controllers.NewQcOnlineController(db)
 	onlineFlowController := controllers.NewOnlineFlowController(db)
 	pickedOrderController := controllers.NewPickedOrderController(db)
+	outboundController := controllers.NewOutboundController(db)
 	log.Println("✓ Controllers initialized successfully")
 
 	// Setup routes
 	log.Println("🛣️  Setting up routes...")
-	router := routes.SetupRoutes(cfg, authController, userManagerController, boxController, channelController, mobileChannelController, expeditionController, productController, storeController, mobileStoreController, qcRibbonController, ribbonFlowController, qcOnlineController, onlineFlowController, pickedOrderController)
+	router := routes.SetupRoutes(cfg, authController, userManagerController, boxController, channelController, mobileChannelController, expeditionController, productController, storeController, mobileStoreController, qcRibbonController, ribbonFlowController, qcOnlineController, onlineFlowController, pickedOrderController, outboundController)
 	log.Println("✓ Routes configured successfully")
 
 	// Build API URL from config
