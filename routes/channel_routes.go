@@ -22,3 +22,12 @@ func SetupChannelRoutes(api *gin.RouterGroup, cfg *config.Config, channelControl
 		channel.DELETE("/:id", channelController.RemoveChannel) // Delete channel by ID
 	}
 }
+
+func SetupMobileChannelRoutes(api *gin.RouterGroup, cfg *config.Config, mobileChannelController *controllers.MobileChannelController) {
+	// Mobile channel routes (public)
+	mobileChannel := api.Group("/mobile/channels")
+	{
+		// Public mobile channel routes
+		mobileChannel.GET("", mobileChannelController.GetMobileChannels) // Get all channels for mobile (with optional search)
+	}
+}
