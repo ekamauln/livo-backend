@@ -29,10 +29,10 @@ type Order struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Relationship
-	OrderDetails []OrderDetail `gorm:"foreignKey:OrderID" json:"order_details"`
-	Picker       *User         `gorm:"foreignKey:PickedBy" json:"picker,omitempty"`
-	PendingUser  *User         `gorm:"foreignKey:PendingBy" json:"pending_user,omitempty"`
-	Canceller    *User         `gorm:"foreignKey:CancelledBy" json:"canceller,omitempty"`
+	OrderDetails    []OrderDetail `gorm:"foreignKey:OrderID" json:"order_details"`
+	Picker          *User         `gorm:"foreignKey:PickedBy" json:"picker,omitempty"`
+	PendingOperator *User         `gorm:"foreignKey:PendingBy" json:"pending_operator,omitempty"`
+	Canceller       *User         `gorm:"foreignKey:CancelledBy" json:"canceller,omitempty"`
 }
 
 type OrderDetail struct {
@@ -49,35 +49,39 @@ type OrderDetail struct {
 
 // OrderResponse represents order data for API responses
 type OrderResponse struct {
-	ID           uint                  `json:"id"`
-	OrderGineeID string                `json:"order_id"`
-	Status       string                `json:"status"`
-	Channel      string                `json:"channel"`
-	Store        string                `json:"store"`
-	Buyer        string                `json:"buyer"`
-	Address      string                `json:"address"`
-	Courier      string                `json:"courier"`
-	Tracking     string                `json:"tracking"`
-	SentBefore   string                `json:"sent_before"`
-	Complained   bool                  `json:"complained"`
-	PickedBy     string                `json:"picked_by"`
-	PickedAt     string                `json:"picked_at"`
-	PendingBy    string                `json:"pending_by"`
-	PendingAt    string                `json:"pending_at"`
-	CancelledBy  string                `json:"cancelled_by"`
-	CancelledAt  string                `json:"cancelled_at"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
+	ID           uint      `json:"id"`
+	OrderGineeID string    `json:"order_id"`
+	Status       string    `json:"status"`
+	Channel      string    `json:"channel"`
+	Store        string    `json:"store"`
+	Buyer        string    `json:"buyer"`
+	Address      string    `json:"address"`
+	Courier      string    `json:"courier"`
+	Tracking     string    `json:"tracking"`
+	SentBefore   string    `json:"sent_before"`
+	Complained   bool      `json:"complained"`
+	PickedBy     string    `json:"picked_by"`
+	PickedAt     string    `json:"picked_at"`
+	PendingBy    string    `json:"pending_by"`
+	PendingAt    string    `json:"pending_at"`
+	CancelledBy  string    `json:"cancelled_by"`
+	CancelledAt  string    `json:"cancelled_at"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+
+	// Related data
 	OrderDetails []OrderDetailResponse `json:"order_details"`
 }
 
 type OrderDetailResponse struct {
-	ID          uint             `json:"id"`
-	Sku         string           `json:"sku"`
-	ProductName string           `json:"product_name"`
-	Variant     string           `json:"variant"`
-	Quantity    int              `json:"quantity"`
-	Product     *ProductResponse `json:"product,omitempty"`
+	ID          uint   `json:"id"`
+	Sku         string `json:"sku"`
+	ProductName string `json:"product_name"`
+	Variant     string `json:"variant"`
+	Quantity    int    `json:"quantity"`
+
+	// Related data
+	Product *ProductResponse `json:"product,omitempty"`
 }
 
 // ToOrderResponse converts Order model to OrderResponse
@@ -121,7 +125,7 @@ func (o *Order) ToOrderResponse() OrderResponse {
 		UpdatedAt:    o.UpdatedAt,
 		PickedBy:     o.Picker.FullName,
 		PickedAt:     o.PickedAt.Format("2006-01-02 15:04:05"),
-		PendingBy:    o.PendingUser.FullName,
+		PendingBy:    o.PendingOperator.FullName,
 		PendingAt:    o.PendingAt.Format("2006-01-02 15:04:05"),
 		CancelledBy:  o.Canceller.FullName,
 		CancelledAt:  o.CancelledAt.Format("2006-01-02 15:04:05"),
