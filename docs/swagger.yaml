@@ -182,6 +182,19 @@ definitions:
     - sku
     - variant
     type: object
+  controllers.CreateQcRibbonRequest:
+    properties:
+      details:
+        items:
+          $ref: '#/definitions/controllers.QcRibbonDetailRequest'
+        type: array
+      tracking:
+        example: 250925AASB6BSDJUI3C
+        type: string
+    required:
+    - details
+    - tracking
+    type: object
   controllers.CreateStoreRequest:
     properties:
       code:
@@ -438,6 +451,52 @@ definitions:
       products:
         items:
           $ref: '#/definitions/models.ProductResponse'
+        type: array
+    type: object
+  controllers.QcRibbonDailyCount:
+    properties:
+      count:
+        type: integer
+      date:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+    type: object
+  controllers.QcRibbonDetailRequest:
+    properties:
+      box_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 5
+        minimum: 1
+        type: integer
+    required:
+    - box_id
+    - quantity
+    type: object
+  controllers.QcRibbonsDailyCountResponse:
+    properties:
+      daily_counts:
+        items:
+          $ref: '#/definitions/controllers.QcRibbonDailyCount'
+        type: array
+      month:
+        description: e.g., "November"
+        type: string
+      total_count:
+        description: Total for the month
+        type: integer
+      year:
+        description: e.g., 2025
+        type: integer
+    type: object
+  controllers.QcRibbonsListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      qc_ribbons:
+        items:
+          $ref: '#/definitions/models.QcRibbonResponse'
         type: array
     type: object
   controllers.RefreshTokenRequest:
@@ -747,6 +806,48 @@ definitions:
       updated_at:
         type: string
       variant:
+        type: string
+    type: object
+  models.QcRibbonDetailResponse:
+    properties:
+      box:
+        $ref: '#/definitions/models.BoxResponse'
+      box_id:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      qc_ribbon_id:
+        type: integer
+      quantity:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.QcRibbonResponse:
+    properties:
+      complained:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      order:
+        allOf:
+        - $ref: '#/definitions/models.OrderResponse'
+        description: Related data
+      qc_by:
+        type: integer
+      qc_operator:
+        $ref: '#/definitions/models.UserResponse'
+      qc_ribbon_details:
+        items:
+          $ref: '#/definitions/models.QcRibbonDetailResponse'
+        type: array
+      tracking:
+        type: string
+      updated_at:
         type: string
     type: object
   models.Role:
@@ -2518,6 +2619,170 @@ paths:
       summary: Update product
       tags:
       - products
+  /api/ribbons/qc-ribbons:
+    get:
+      consumes:
+      - application/json
+      description: Get list of qc-ribbons for current user filtered by current date.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by tracking number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.QcRibbonsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all qc-ribbons for logged-in user
+      tags:
+      - ribbons
+    post:
+      consumes:
+      - application/json
+      description: Create a new qc-ribbon entry with multiple box details.
+      parameters:
+      - description: Qc-ribbon data
+        in: body
+        name: qc_ribbon
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateQcRibbonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.QcRibbonResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new qc-ribbon
+      tags:
+      - ribbons
+  /api/ribbons/qc-ribbons/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a specific qc-ribbon by ID.
+      parameters:
+      - description: Qc-ribbon ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.QcRibbonResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a specific qc-ribbon by ID
+      tags:
+      - ribbons
+  /api/ribbons/qc-ribbons/chart:
+    get:
+      consumes:
+      - application/json
+      description: Get daily count of qc-ribbons for current month (for chart data,
+        logged-in users only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.QcRibbonsDailyCountResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get qc-ribbon counts per day for current month
+      tags:
+      - ribbons
   /api/stores:
     get:
       consumes:
