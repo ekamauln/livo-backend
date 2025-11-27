@@ -13,39 +13,39 @@ import (
 	"gorm.io/gorm"
 )
 
-type RibbonFlowController struct {
+type OnlineFlowController struct {
 	DB *gorm.DB
 }
 
-// NewRibbonFlowController creates a new ribbon flow controller
-func NewRibbonFlowController(db *gorm.DB) *RibbonFlowController {
-	return &RibbonFlowController{DB: db}
+// NewOnlineFlowController creates a new online flow controller
+func NewOnlineFlowController(db *gorm.DB) *OnlineFlowController {
+	return &OnlineFlowController{DB: db}
 }
 
-// GetRibbonFlows godoc
-// @Summary Get all ribbon flows
-// @Description Get all ribbon flows with pagination and search, primary tracking from qc-ribbon.
-// @Tags ribbons
+// GetOnlineFlows godoc
+// @Summary Get all online flows
+// @Description Get all online flows with pagination and search, primary tracking from qc-online.
+// @Tags onlines
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Param start_date query string false "Start date (YYYY-MM-DD or YYYY-M-D format)"
-// @Param end_date query string false "End date (YYYY-MM-DD or YYYY-M-D format)"
+// @Param start_date query string false "Start date (YYYY-MM-DD format)"
+// @Param end_date query string false "End date (YYYY-MM-DD format)"
 // @Param search query string false "Search by tracking number"
-// @Success 200 {object} utilities.Response{data=RibbonFlowsListResponse}
+// @Success 200 {object} utilities.Response{data=OnlineFlowsListResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
-// @Router /api/ribbons/ribbon-flow [get]
-func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
+// @Router /api/onlines/online-flow [get]
+func (ofc *OnlineFlowController) GetOnlineFlows(c *gin.Context) {
 	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	offset := (page - 1) * limit
 
-	// ADDED: Parse date range parameters
+	// Parse date range parameters
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 
@@ -55,8 +55,8 @@ func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 	var trackingNumbers []string
 	var total int64
 
-	// Get tracking numbers primarily from qc_ribbons
-	query := rfc.DB.Model(&models.QcRibbon{}).Select("DISTINCT tracking").Where("tracking IS NOT NULL AND tracking != ''")
+	// Get tracking numbers primarily from mb_onlines
+	query := ofc.DB.Model(&models.QcOnline{}).Select("DISTINCT tracking").Where("tracking IS NOT NULL AND tracking != ''")
 
 	// Apply date range filters if provided
 	if startDate != "" {
@@ -99,15 +99,15 @@ func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 		return
 	}
 
-	// Build ribbon flows for each tracking
-	var ribbonFlows []RibbonFlowResponse
+	// Build online flows for each tracking
+	var onlineFlows []OnlineFlowResponse
 	for _, tracking := range trackingNumbers {
-		flow := rfc.buildRibbonFlow(tracking)
-		ribbonFlows = append(ribbonFlows, flow)
+		flow := ofc.buildOnlineFlow(tracking)
+		onlineFlows = append(onlineFlows, flow)
 	}
 
-	response := RibbonFlowsListResponse{
-		RibbonFlows: ribbonFlows,
+	response := OnlineFlowsListResponse{
+		OnlineFlows: onlineFlows,
 		Pagination: utilities.PaginationResponse{
 			Page:  page,
 			Limit: limit,
@@ -115,8 +115,8 @@ func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 		},
 	}
 
-	// Build success message with date filters
-	message := "Ribbon flows retrieved successfully"
+	// Build success message
+	message := "Online flows retrieved successfully"
 	var filters []string
 
 	if startDate != "" || endDate != "" {
@@ -141,20 +141,20 @@ func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, message, response)
 }
 
-// GetRibbonFlow godoc
-// @Summary Get ribbon flow tracking
-// @Description Get the complete flow tracking through ribbon process (qc-ribbon -> outbound -> order).
-// @Tags ribbons
+// GetOnlineFlow godoc
+// @Summary Get online flow tracking
+// @Description Get the complete flow tracking through online process (qc-online -> outbound -> order).
+// @Tags onlines
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param tracking path string true "Tracking number"
-// @Success 200 {object} utilities.Response{data=RibbonFlowResponse}
+// @Success 200 {object} utilities.Response{data=OnlineFlowResponse}
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/ribbons/ribbon-flow/{tracking} [get]
-func (rfc *RibbonFlowController) GetRibbonFlow(c *gin.Context) {
+// @Router /api/onlines/online-flow/{tracking} [get]
+func (ofc *OnlineFlowController) GetOnlineFlow(c *gin.Context) {
 	tracking := c.Param("tracking")
 
 	if tracking == "" {
@@ -162,64 +162,64 @@ func (rfc *RibbonFlowController) GetRibbonFlow(c *gin.Context) {
 		return
 	}
 
-	flow := rfc.buildRibbonFlow(tracking)
+	flow := ofc.buildOnlineFlow(tracking)
 
-	// CHANGED: Check if qc-ribbon exists (since it's the primary source)
-	if flow.QcRibbon == nil {
-		utilities.ErrorResponse(c, http.StatusNotFound, "Tracking not found", "No qc-ribbon record found for the specified tracking number")
+	// CHANGED: Check if qc-online exists (since it's the primary source)
+	if flow.QcOnline == nil {
+		utilities.ErrorResponse(c, http.StatusNotFound, "Tracking not found", "No qc-online record found for the specified tracking number")
 		return
 	}
 
-	utilities.SuccessResponse(c, http.StatusOK, "Ribbon flow retrieved successfully", flow)
+	utilities.SuccessResponse(c, http.StatusOK, "Online flow retrieved successfully", flow)
 }
 
-// Helper function to build ribbon flow for a tracking number
-func (rfc *RibbonFlowController) buildRibbonFlow(tracking string) RibbonFlowResponse {
-	var response RibbonFlowResponse
+// Helper function to build online flow for a tracking number
+func (ofc *OnlineFlowController) buildOnlineFlow(tracking string) OnlineFlowResponse {
+	var response OnlineFlowResponse
 	response.Tracking = tracking
 
-	// 1. Query QC Ribbon (PRIMARY SOURCE)
-	var qcRibbon models.QcRibbon
-	if err := rfc.DB.Preload("User").Where("tracking = ?", tracking).First(&qcRibbon).Error; err == nil {
-		var operator *RibbonOperatorFlowInfo
-		if qcRibbon.QcOperator != nil {
-			operator = &RibbonOperatorFlowInfo{
-				ID:       qcRibbon.QcOperator.ID,
-				Username: qcRibbon.QcOperator.Username,
-				FullName: qcRibbon.QcOperator.FullName,
+	// 1. Query QC Online (PRIMARY SOURCE)
+	var qcOnline models.QcOnline
+	if err := ofc.DB.Preload("User").Where("tracking = ?", tracking).First(&qcOnline).Error; err == nil {
+		var operator *OnlineOperatorFlowInfo
+		if qcOnline.QcOperator != nil {
+			operator = &OnlineOperatorFlowInfo{
+				ID:       qcOnline.QcOperator.ID,
+				Username: qcOnline.QcOperator.Username,
+				FullName: qcOnline.QcOperator.FullName,
 			}
 		}
 
-		response.QcRibbon = &QcRibbonFlowInfo{
+		response.QcOnline = &QcOnlineFlowInfo{
 			Operator:  operator,
-			CreatedAt: qcRibbon.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			CreatedAt: qcOnline.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 
 	// 2. Query Outbound
 	var outbound models.Outbound
-	if err := rfc.DB.Preload("User").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
-		var operator *RibbonOperatorFlowInfo
+	if err := ofc.DB.Preload("User").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
+		var operator *OnlineOperatorFlowInfo
 		if outbound.OutboundOperator != nil {
-			operator = &RibbonOperatorFlowInfo{
+			operator = &OnlineOperatorFlowInfo{
 				ID:       outbound.OutboundOperator.ID,
 				Username: outbound.OutboundOperator.Username,
 				FullName: outbound.OutboundOperator.FullName,
 			}
 		}
 
-		response.Outbound = &RibbonOutboundFlowInfo{
+		response.Outbound = &OnlineOutboundFlowInfo{
 			Operator:        operator,
 			Expedition:      outbound.Expedition,
-			ExpeditionColor: outbound.ExpeditionColor, // ADDED
+			ExpeditionColor: outbound.ExpeditionColor,
 			CreatedAt:       outbound.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 
 	// 3. Query Order (LAST)
 	var order models.Order
-	if err := rfc.DB.Where("tracking = ?", tracking).First(&order).Error; err == nil {
-		response.Order = &RibbonOrderFlowInfo{
+	if err := ofc.DB.Where("tracking = ?", tracking).First(&order).Error; err == nil {
+		response.Order = &OnlineOrderFlowInfo{
 			Tracking:     order.Tracking,
 			OrderGineeID: order.OrderGineeID,
 			Complained:   order.Complained,
@@ -231,53 +231,39 @@ func (rfc *RibbonFlowController) buildRibbonFlow(tracking string) RibbonFlowResp
 }
 
 // Request/Response structs - REORDERED to match flow
-type RibbonFlowsListResponse struct {
-	RibbonFlows []RibbonFlowResponse         `json:"ribbon_flows"`
+type OnlineFlowsListResponse struct {
+	OnlineFlows []OnlineFlowResponse         `json:"online_flows"`
 	Pagination  utilities.PaginationResponse `json:"pagination"`
 }
 
-// FIXED: Use unique pagination response to avoid conflicts
-type RibbonFlowPaginationResponse struct {
-	Page  int `json:"page"`
-	Limit int `json:"limit"`
-	Total int `json:"total"`
-}
-
-// REORDERED: qc-ribbon -> outbound -> order
-type RibbonFlowResponse struct {
+// REORDERED: qc-online -> outbound -> order
+type OnlineFlowResponse struct {
 	Tracking string                  `json:"tracking"`
-	QcRibbon *QcRibbonFlowInfo       `json:"qc_ribbon,omitempty"`
-	Outbound *RibbonOutboundFlowInfo `json:"outbound,omitempty"`
-	Order    *RibbonOrderFlowInfo    `json:"order,omitempty"`
+	QcOnline *QcOnlineFlowInfo       `json:"qc_online,omitempty"`
+	Outbound *OnlineOutboundFlowInfo `json:"outbound,omitempty"`
+	Order    *OnlineOrderFlowInfo    `json:"order,omitempty"`
 }
 
-type QcRibbonFlowInfo struct {
-	Operator  *RibbonOperatorFlowInfo `json:"operator,omitempty"`
+type QcOnlineFlowInfo struct {
+	Operator  *OnlineOperatorFlowInfo `json:"operator,omitempty"`
 	CreatedAt string                  `json:"created_at"`
 }
 
-type OutboundFlowInfo struct {
-	Operator        *RibbonOperatorFlowInfo `json:"operator,omitempty"`
-	Expedition      string                  `json:"expedition"`
-	ExpeditionColor string                  `json:"expedition_color"`
-	CreatedAt       string                  `json:"created_at"`
-}
-
-type RibbonOutboundFlowInfo struct {
-	Operator        *RibbonOperatorFlowInfo `json:"operator,omitempty"`
-	Expedition      string                  `json:"expedition"`
-	ExpeditionColor string                  `json:"expedition_color"`
-	CreatedAt       string                  `json:"created_at"`
-}
-
-type RibbonOrderFlowInfo struct {
+type OnlineOrderFlowInfo struct {
 	Tracking     string `json:"tracking"`
 	OrderGineeID string `json:"order_ginee_id"`
 	Complained   bool   `json:"complained"`
 	CreatedAt    string `json:"created_at"`
 }
 
-type RibbonOperatorFlowInfo struct {
+type OnlineOutboundFlowInfo struct {
+	Operator        *OnlineOperatorFlowInfo `json:"operator,omitempty"`
+	Expedition      string                  `json:"expedition"`
+	ExpeditionColor string                  `json:"expedition_color"`
+	CreatedAt       string                  `json:"created_at"`
+}
+
+type OnlineOperatorFlowInfo struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
 	FullName string `json:"full_name"`

@@ -306,7 +306,7 @@ func (qrc *QcRibbonController) CreateQcRibbon(c *gin.Context) {
 
 // GetChartQcRibbons godoc
 // @Summary Get qc-ribbon counts per day for current month
-// @Description Get daily count of qc-ribbons for current month (for chart data, logged-in users only)
+// @Description Get daily count of qc-ribbons for current month (for chart data).
 // @Tags ribbons
 // @Accept json
 // @Produce json
