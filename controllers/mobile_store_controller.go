@@ -19,7 +19,7 @@ func NewMobileStoreController(db *gorm.DB) *MobileStoreController {
 }
 
 // GetMobileStores godoc
-// @Summary Get all stores
+// @Summary Get all stores by mobile
 // @Description Get list of all stores.
 // @Tags stores
 // @Accept json
@@ -60,7 +60,7 @@ func (smc *MobileStoreController) GetMobileStores(c *gin.Context) {
 		storeResponses[i] = store.ToStoreResponse()
 	}
 
-	response := StoreMobilesListResponse{
+	response := MobileStoresListResponse{
 		Stores: storeResponses,
 		Total:  int(total),
 	}
@@ -75,7 +75,7 @@ func (smc *MobileStoreController) GetMobileStores(c *gin.Context) {
 }
 
 // Request/Response structs
-type StoreMobilesListResponse struct {
+type MobileStoresListResponse struct {
 	Stores []models.StoreResponse `json:"stores"`
 	Total  int                    `json:"total"`
 }

@@ -23,9 +23,9 @@ func NewMobileOrderController(db *gorm.DB) *MobileOrderController {
 }
 
 // GetMobileOrders godoc
-// @Summary Get all orders for pickers with search capability
+// @Summary Get all orders by mobile
 // @Description Get list of all orders with "ready to pick" status, Optional search by order ID or tracking number.
-// @Tags orders
+// @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -92,6 +92,7 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 						Variant:     detail.Variant,
 						Quantity:    detail.Quantity,
 					},
+					Image:    "Image not found",
 					Location: "Location not found",
 					Barcode:  "Barcode not found",
 				})
@@ -105,6 +106,7 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 						Variant:     detail.Variant,
 						Quantity:    detail.Quantity,
 					},
+					Image:    product.Image,
 					Location: product.Location,
 					Barcode:  product.Barcode,
 				})
@@ -147,9 +149,9 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 }
 
 // GetMyPickingOrders godoc
-// @Summary Get my ongoing picking orders
+// @Summary Get my ongoing picking orders by mobile
 // @Description Get list of orders currently being picked by the logged-in user (status: "picking process")
-// @Tags orders
+// @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -194,9 +196,9 @@ func (moc *MobileOrderController) GetMyPickingOrders(c *gin.Context) {
 }
 
 // PickingOrder godoc
-// @Summary Pick an order for processing
+// @Summary Pick an order for processing by mobile
 // @Description Change order status from "ready to pick" to "picking process" and assign to current picker
-// @Tags orders
+// @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -258,17 +260,17 @@ func (moc *MobileOrderController) PickingOrder(c *gin.Context) {
 }
 
 // GetMobileOrder godoc
-// @Summary Get order details with product information
+// @Summary Get order by ID by mobile
 // @Description Get specific order details with product location and barcode joined by SKU.
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Order ID"
-// @Success 200 {object} utils.Response{data=MobileOrderDetailResponse}
-// @Failure 401 {object} utils.Response
-// @Failure 403 {object} utils.Response
-// @Failure 404 {object} utils.Response
+// @Success 200 {object} utilities.Response{data=MobileOrderDetailResponse}
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
 // @Router /api/mobile/orders/{id} [get]
 func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 	// Get order ID from URL parameter
@@ -321,6 +323,7 @@ func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 					Variant:     detail.Variant,
 					Quantity:    detail.Quantity,
 				},
+				Image:    "Image not found",
 				Location: "Location not found",
 				Barcode:  "Barcode not found",
 			})
@@ -334,6 +337,7 @@ func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 					Variant:     detail.Variant,
 					Quantity:    detail.Quantity,
 				},
+				Image:    product.Image,
 				Location: product.Location,
 				Barcode:  product.Barcode,
 			})
@@ -366,18 +370,18 @@ func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 }
 
 // CompletePickingOrder godoc
-// @Summary Complete picking process
+// @Summary Complete picking process by mobile
 // @Description Change order status from "picking process" to "picking complete" and create pick order records
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Order ID"
-// @Success 200 {object} utils.Response{data=models.OrderResponse}
-// @Failure 400 {object} utils.Response
-// @Failure 401 {object} utils.Response
-// @Failure 403 {object} utils.Response
-// @Failure 404 {object} utils.Response
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
 // @Router /api/mobile/orders/{id}/complete [put]
 func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 	// Get order ID from URL parameter
@@ -472,9 +476,9 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 }
 
 // PendingPickingOrder godoc
-// @Summary Pending picking process
+// @Summary Pending picking process by mobile
 // @Description Change order status from "picking process" to "pending picking" and unassign picker
-// @Tags orders
+// @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -530,7 +534,7 @@ func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, "Pending picking order successfully", order.ToOrderResponse())
 }
 
-// Response struct for mobile endpoints
+// Response struct by mobile endpoints
 type MobileOrderDetailResponse struct {
 	ID           uint                           `json:"id"`
 	OrderGineeID string                         `json:"order_ginee_id"`
@@ -582,6 +586,7 @@ type MobileOrdersListResponse struct {
 
 type MobileOrderDetailWithProduct struct {
 	models.OrderDetailResponse
+	Image    string `json:"image"`
 	Location string `json:"location"`
 	Barcode  string `json:"barcode"`
 }

@@ -8,6 +8,190 @@ definitions:
     required:
     - role_name
     type: object
+  controllers.BoxesListResponse:
+    properties:
+      boxes:
+        items:
+          $ref: '#/definitions/models.BoxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.BulkCreateOrderRequest:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/controllers.CreateOrderRequest'
+        minItems: 1
+        type: array
+    required:
+    - orders
+    type: object
+  controllers.BulkCreateOrderResponse:
+    properties:
+      created_orders:
+        items:
+          $ref: '#/definitions/models.OrderResponse'
+        type: array
+      failed_orders:
+        items:
+          $ref: '#/definitions/controllers.FailedOrder'
+        type: array
+      skipped_orders:
+        items:
+          $ref: '#/definitions/controllers.SkippedOrder'
+        type: array
+      summary:
+        $ref: '#/definitions/controllers.BulkCreateSummary'
+    type: object
+  controllers.BulkCreateSummary:
+    properties:
+      created:
+        type: integer
+      failed:
+        type: integer
+      skipped:
+        type: integer
+      total:
+        type: integer
+    type: object
+  controllers.ChannelsListResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/models.ChannelResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.CreateBoxRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  controllers.CreateChannelRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  controllers.CreateExpeditionRequest:
+    properties:
+      code:
+        type: string
+      color:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    required:
+    - code
+    - color
+    - name
+    - slug
+    type: object
+  controllers.CreateOrderDetailRequest:
+    properties:
+      product_name:
+        example: Sample Product
+        type: string
+      quantity:
+        example: 2
+        minimum: 1
+        type: integer
+      sku:
+        example: PROD001
+        type: string
+      variant:
+        example: Red - Size M
+        type: string
+    required:
+    - product_name
+    - quantity
+    - sku
+    type: object
+  controllers.CreateOrderRequest:
+    properties:
+      address:
+        example: 123 Main St, City, Country
+        type: string
+      buyer:
+        example: John Doe
+        type: string
+      channel:
+        example: Shopee
+        type: string
+      courier:
+        example: JNE
+        type: string
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.CreateOrderDetailRequest'
+        minItems: 1
+        type: array
+      order_ginee_id:
+        example: 2509116GA36VM5
+        type: string
+      sent_before:
+        example: 2023-01-01 12:00
+        type: string
+      status:
+        example: ready to pick
+        type: string
+      store:
+        example: SP deParcelRibbon
+        type: string
+      tracking:
+        example: JNE1234567890
+        type: string
+    required:
+    - address
+    - buyer
+    - channel
+    - order_details
+    - order_ginee_id
+    - store
+    type: object
+  controllers.CreateProductRequest:
+    properties:
+      barcode:
+        type: string
+      image:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      sku:
+        type: string
+      variant:
+        type: string
+    required:
+    - image
+    - name
+    - sku
+    - variant
+    type: object
+  controllers.CreateStoreRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
   controllers.CreateUserRequest:
     properties:
       email:
@@ -37,6 +221,24 @@ definitions:
     - password
     - username
     type: object
+  controllers.ExpeditionsListResponse:
+    properties:
+      expeditions:
+        items:
+          $ref: '#/definitions/models.ExpeditionResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.FailedOrder:
+    properties:
+      error:
+        type: string
+      index:
+        type: integer
+      order_ginee_id:
+        type: string
+    type: object
   controllers.LoginRequest:
     properties:
       password:
@@ -57,6 +259,186 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/models.UserResponse'
+    type: object
+  controllers.MobileChannelsListResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/models.ChannelResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  controllers.MobileOrderDetailResponse:
+    properties:
+      address:
+        type: string
+      buyer:
+        type: string
+      cancelled_at:
+        type: string
+      cancelled_by:
+        type: string
+      channel:
+        type: string
+      courier:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.MobileOrderDetailWithProduct'
+        type: array
+      order_ginee_id:
+        type: string
+      pending_at:
+        type: string
+      pending_by:
+        type: string
+      picked_at:
+        type: string
+      picked_by:
+        type: string
+      sent_before:
+        type: string
+      status:
+        type: string
+      store:
+        type: string
+      tracking:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  controllers.MobileOrderDetailWithProduct:
+    properties:
+      barcode:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      location:
+        type: string
+      product:
+        allOf:
+        - $ref: '#/definitions/models.ProductResponse'
+        description: Related data
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      variant:
+        type: string
+    type: object
+  controllers.MobileOrderListResponse:
+    properties:
+      address:
+        type: string
+      buyer:
+        type: string
+      cancelled_at:
+        type: string
+      cancelled_by:
+        type: string
+      channel:
+        type: string
+      courier:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.MobileOrderDetailWithProduct'
+        type: array
+      order_ginee_id:
+        type: string
+      pending_at:
+        type: string
+      pending_by:
+        type: string
+      picked_at:
+        type: string
+      picked_by:
+        type: string
+      sent_before:
+        type: string
+      status:
+        type: string
+      store:
+        type: string
+      tracking:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  controllers.MobileOrdersListResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/controllers.MobileOrderListResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.MobileStoresListResponse:
+    properties:
+      stores:
+        items:
+          $ref: '#/definitions/models.StoreResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  controllers.OrderDetailResponse:
+    properties:
+      id:
+        type: integer
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      variant:
+        type: string
+    type: object
+  controllers.OrderDetailsOnlyResponse:
+    properties:
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.OrderDetailResponse'
+        type: array
+      order_ginee_id:
+        type: string
+      sent_before:
+        type: string
+      tracking:
+        type: string
+    type: object
+  controllers.OrdersListResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/models.OrderResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.ProductsListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      products:
+        items:
+          $ref: '#/definitions/models.ProductResponse'
+        type: array
     type: object
   controllers.RefreshTokenRequest:
     properties:
@@ -96,6 +478,115 @@ definitions:
     required:
     - role_name
     type: object
+  controllers.SkippedOrder:
+    properties:
+      index:
+        type: integer
+      order_ginee_id:
+        type: string
+      reason:
+        type: string
+    type: object
+  controllers.StoresListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      stores:
+        items:
+          $ref: '#/definitions/models.StoreResponse'
+        type: array
+    type: object
+  controllers.UpdateBoxRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  controllers.UpdateChannelRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  controllers.UpdateComplainedStatusRequest:
+    properties:
+      complained:
+        example: true
+        type: boolean
+    required:
+    - complained
+    type: object
+  controllers.UpdateExpeditionRequest:
+    properties:
+      code:
+        type: string
+      color:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    required:
+    - code
+    - color
+    - name
+    - slug
+    type: object
+  controllers.UpdateOrderDetailRequest:
+    properties:
+      product_name:
+        example: Updated Product
+        type: string
+      quantity:
+        example: 3
+        minimum: 1
+        type: integer
+      sku:
+        example: PROD001
+        type: string
+      variant:
+        example: Blue - Size L
+        type: string
+    required:
+    - product_name
+    - quantity
+    - sku
+    type: object
+  controllers.UpdateProductRequest:
+    properties:
+      barcode:
+        type: string
+      image:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      variant:
+        type: string
+    required:
+    - image
+    - name
+    - variant
+    type: object
+  controllers.UpdateStoreRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
   controllers.UpdateUserPasswordRequest:
     properties:
       new_password:
@@ -130,6 +621,134 @@ definitions:
           $ref: '#/definitions/models.UserResponse'
         type: array
     type: object
+  models.BoxResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.ChannelResponse:
+    properties:
+      code:
+        example: SP
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.ExpeditionResponse:
+    properties:
+      code:
+        type: string
+      color:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.OrderDetailResponse:
+    properties:
+      id:
+        type: integer
+      product:
+        allOf:
+        - $ref: '#/definitions/models.ProductResponse'
+        description: Related data
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      variant:
+        type: string
+    type: object
+  models.OrderResponse:
+    properties:
+      address:
+        type: string
+      buyer:
+        type: string
+      cancelled_at:
+        type: string
+      cancelled_by:
+        type: string
+      channel:
+        type: string
+      complained:
+        type: boolean
+      courier:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      order_details:
+        description: Related data
+        items:
+          $ref: '#/definitions/models.OrderDetailResponse'
+        type: array
+      order_id:
+        type: string
+      pending_at:
+        type: string
+      pending_by:
+        type: string
+      picked_at:
+        type: string
+      picked_by:
+        type: string
+      sent_before:
+        type: string
+      status:
+        type: string
+      store:
+        type: string
+      tracking:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.ProductResponse:
+    properties:
+      barcode:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      sku:
+        type: string
+      updated_at:
+        type: string
+      variant:
+        type: string
+    type: object
   models.Role:
     properties:
       created_at:
@@ -156,6 +775,19 @@ definitions:
       id:
         type: integer
       name:
+        type: string
+    type: object
+  models.StoreResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
         type: string
     type: object
   models.UserResponse:
@@ -333,6 +965,1767 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/boxes:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all boxes.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by box code (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.BoxesListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all boxes
+      tags:
+      - boxes
+    post:
+      consumes:
+      - application/json
+      description: Create a new box.
+      parameters:
+      - description: Create box request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateBoxRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.BoxResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new box
+      tags:
+      - boxes
+  /api/boxes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a box.
+      parameters:
+      - description: Box ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove box
+      tags:
+      - boxes
+    get:
+      consumes:
+      - application/json
+      description: Get box details by ID.
+      parameters:
+      - description: Box ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.BoxResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get box by ID
+      tags:
+      - boxes
+    put:
+      consumes:
+      - application/json
+      description: Update box information.
+      parameters:
+      - description: Box ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update box request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateBoxRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.BoxResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update box
+      tags:
+      - boxes
+  /api/channels:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all channels.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by Code or Name (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ChannelsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all channels
+      tags:
+      - channels
+    post:
+      consumes:
+      - application/json
+      description: Create a new channel.
+      parameters:
+      - description: Create channel request
+        in: body
+        name: channel
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateChannelRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ChannelResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new channel
+      tags:
+      - channels
+  /api/channels/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a channel.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove channel
+      tags:
+      - channels
+    get:
+      consumes:
+      - application/json
+      description: Get specific channel by ID.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ChannelResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get channel by ID
+      tags:
+      - channels
+    put:
+      consumes:
+      - application/json
+      description: Update specific channel information.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update channel request
+        in: body
+        name: channel
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateChannelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ChannelResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update channel
+      tags:
+      - channels
+  /api/expeditions:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all expeditions.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by Code or Name (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ExpeditionsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all expeditions
+      tags:
+      - expeditions
+    post:
+      consumes:
+      - application/json
+      description: Create a new expedition.
+      parameters:
+      - description: Create expedition request
+        in: body
+        name: expedition
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateExpeditionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ExpeditionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new expedition
+      tags:
+      - expeditions
+  /api/expeditions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete expedition (logged-in users only)
+      parameters:
+      - description: Expedition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove expedition
+      tags:
+      - expeditions
+    get:
+      consumes:
+      - application/json
+      description: Get expedition details by ID.
+      parameters:
+      - description: Expedition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ExpeditionResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get expedition by ID
+      tags:
+      - expeditions
+    put:
+      consumes:
+      - application/json
+      description: Update expedition.
+      parameters:
+      - description: Expedition ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Expedition data
+        in: body
+        name: expedition
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateExpeditionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ExpeditionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update expedition
+      tags:
+      - expeditions
+  /api/mobile/channels:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all channels.
+      parameters:
+      - description: Search by channel code or name (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileChannelsListResponse'
+              type: object
+      summary: Get all channels by mobile
+      tags:
+      - channels
+  /api/mobile/orders:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all orders with "ready to pick" status, Optional search
+        by order ID or tracking number.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by order Ginee ID or tracking number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileOrdersListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all orders by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get specific order details with product location and barcode joined
+        by SKU.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileOrderDetailResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get order by ID by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/{id}/complete:
+    put:
+      consumes:
+      - application/json
+      description: Change order status from "picking process" to "picking complete"
+        and create pick order records
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Complete picking process by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/{id}/pending:
+    put:
+      consumes:
+      - application/json
+      description: Change order status from "picking process" to "pending picking"
+        and unassign picker
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Pending picking process by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/{id}/pick:
+    put:
+      consumes:
+      - application/json
+      description: Change order status from "ready to pick" to "picking process" and
+        assign to current picker
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Pick an order for processing by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/my-picking:
+    get:
+      consumes:
+      - application/json
+      description: 'Get list of orders currently being picked by the logged-in user
+        (status: "picking process")'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.OrderResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my ongoing picking orders by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/stores:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all stores.
+      parameters:
+      - description: Search by store tracking (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileStoresListResponse'
+              type: object
+      summary: Get all stores by mobile
+      tags:
+      - stores
+  /api/orders:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all orders with optional date range filtering and search.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by Order Ginee ID or Tracking number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OrdersListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Create a new order with order details.
+      parameters:
+      - description: Create order request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new order
+      tags:
+      - orders
+  /api/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get specific order information with complete details.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get order by ID
+      tags:
+      - orders
+  /api/orders/{id}/complained:
+    put:
+      consumes:
+      - application/json
+      description: Update the complained status of an order.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update complained status request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateComplainedStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update order complained status
+      tags:
+      - orders
+  /api/orders/{id}/details:
+    get:
+      consumes:
+      - application/json
+      description: Get order ID, tracking and all order details of a specific order
+        by ID.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OrderDetailsOnlyResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get order details
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Add a new order detail to an existing order.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Add order detail request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateOrderDetailRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OrderDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Add new order detail
+      tags:
+      - orders
+  /api/orders/{id}/details/{detail_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific order detail from an order.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order Detail ID
+        in: path
+        name: detail_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove order detail
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      description: Update a specific order detail by ID.
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order Detail ID
+        in: path
+        name: detail_id
+        required: true
+        type: integer
+      - description: Update order detail request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateOrderDetailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OrderDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update order detail
+      tags:
+      - orders
+  /api/orders/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple orders at once, skipping duplicates.
+      parameters:
+      - description: Bulk create order request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.BulkCreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.BulkCreateOrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Bulk create orders
+      tags:
+      - orders
+  /api/products:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all products with optional search by SKU.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by SKU (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ProductsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all products
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product (admin only)
+      parameters:
+      - description: Create product request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new product
+      tags:
+      - products
+  /api/products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a product (admin only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove product
+      tags:
+      - products
+    get:
+      consumes:
+      - application/json
+      description: Get specific product information.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get product by ID
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Update product information (admin only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update product request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update product
+      tags:
+      - products
+  /api/stores:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all stores with optional search by Code or Name.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by Code or Name (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.StoresListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all stores
+      tags:
+      - stores
+    post:
+      consumes:
+      - application/json
+      description: Create a new store.
+      parameters:
+      - description: Create Store Request
+        in: body
+        name: store
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StoreResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new store
+      tags:
+      - stores
+  /api/stores/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a store.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove store
+      tags:
+      - stores
+    get:
+      consumes:
+      - application/json
+      description: Get specific store by ID.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StoreResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get store by ID
+      tags:
+      - stores
+    put:
+      consumes:
+      - application/json
+      description: Update store information.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Store Request
+        in: body
+        name: store
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StoreResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update store
+      tags:
+      - stores
   /api/user-manager/roles:
     get:
       consumes:

@@ -19,13 +19,13 @@ func NewMobileChannelController(db *gorm.DB) *MobileChannelController {
 }
 
 // GetMobileChannels godoc
-// @Summary Get all channels for mobile
+// @Summary Get all channels by mobile
 // @Description Get list of all channels.
 // @Tags channels
 // @Accept json
 // @Produce json
 // @Param search query string false "Search by channel code or name (partial match)"
-// @Success 200 {object} utils.Response{data=MobileChannelsListResponse}
+// @Success 200 {object} utilities.Response{data=MobileChannelsListResponse}
 // @Router /api/mobile/channels [get]
 func (mcc *MobileChannelController) GetMobileChannels(c *gin.Context) {
 	// Parse search parameter
