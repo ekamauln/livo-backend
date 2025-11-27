@@ -3035,6 +3035,165 @@
                 }
             }
         },
+        "/api/ribbons/ribbon-flow": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all ribbon flows with pagination and search, primary tracking from mb-ribbon.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ribbons"
+                ],
+                "summary": "Get all ribbon flows",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD or YYYY-M-D format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD or YYYY-M-D format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by tracking number",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.RibbonFlowsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/ribbons/ribbon-flow/{tracking}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the complete flow tracking through ribbon process (qc-ribbon -\u003e outbound -\u003e order).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ribbons"
+                ],
+                "summary": "Get ribbon flow tracking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracking number",
+                        "name": "tracking",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.RibbonFlowResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/stores": {
             "get": {
                 "security": [
@@ -4825,6 +4984,17 @@
                 }
             }
         },
+        "controllers.QcRibbonFlowInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "operator": {
+                    "$ref": "#/definitions/controllers.RibbonUserFlowInfo"
+                }
+            }
+        },
         "controllers.QcRibbonsDailyCountResponse": {
             "type": "object",
             "properties": {
@@ -4912,6 +5082,85 @@
                 "role_name": {
                     "type": "string",
                     "example": "manager"
+                }
+            }
+        },
+        "controllers.RibbonFlowResponse": {
+            "type": "object",
+            "properties": {
+                "order": {
+                    "$ref": "#/definitions/controllers.RibbonOrderFlowInfo"
+                },
+                "outbound": {
+                    "$ref": "#/definitions/controllers.RibbonOutboundFlowInfo"
+                },
+                "qc_ribbon": {
+                    "$ref": "#/definitions/controllers.QcRibbonFlowInfo"
+                },
+                "tracking": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.RibbonFlowsListResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                },
+                "ribbon_flows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.RibbonFlowResponse"
+                    }
+                }
+            }
+        },
+        "controllers.RibbonOrderFlowInfo": {
+            "type": "object",
+            "properties": {
+                "complained": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "order_ginee_id": {
+                    "type": "string"
+                },
+                "tracking": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.RibbonOutboundFlowInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "expedition": {
+                    "type": "string"
+                },
+                "expedition_color": {
+                    "type": "string"
+                },
+                "operator": {
+                    "$ref": "#/definitions/controllers.RibbonUserFlowInfo"
+                }
+            }
+        },
+        "controllers.RibbonUserFlowInfo": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },

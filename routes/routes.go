@@ -15,7 +15,7 @@ import (
 )
 
 // SetupRoutes configures all routes for the application
-func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController) *gin.Engine {
+func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController) *gin.Engine {
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
 
@@ -175,6 +175,7 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	SetupStoreRoutes(api, cfg, storeController)
 	SetupMobileStoreRoutes(api, cfg, mobileStoreController)
 	SetupQcRibbonRoutes(api, cfg, qcRibbonController)
+	SetupRibbonFlowRoutes(api, cfg, ribbonFlowController)
 
 	return router
 }

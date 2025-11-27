@@ -21,3 +21,15 @@ func SetupQcRibbonRoutes(api *gin.RouterGroup, cfg *config.Config, qcRibbonContr
 		qcRibbon.GET("/chart", qcRibbonController.GetChartQcRibbons) // Get qc-ribbon counts per day for current month
 	}
 }
+
+// SetupRibbonFlowRoutes configures ribbon flow-related routes
+func SetupRibbonFlowRoutes(api *gin.RouterGroup, cfg *config.Config, ribbonFlowController *controllers.RibbonFlowController) {
+	// Ribbon flow routes (authenticated)
+	ribbonFlow := api.Group("/ribbons/ribbon-flow")
+	ribbonFlow.Use(middleware.AuthMiddleware(cfg))
+	{
+		// Public ribbon flow routes
+		ribbonFlow.GET("", ribbonFlowController.GetRibbonFlows)          // Get all ribbon flows (with optional search and date filtering)
+		ribbonFlow.GET("/:tracking", ribbonFlowController.GetRibbonFlow) // Get ribbon flow by tracking number
+	}
+}
