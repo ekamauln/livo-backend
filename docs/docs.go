@@ -2860,6 +2860,171 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/picked-orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all picked orders with their details and search.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Picked-Orders"
+                ],
+                "summary": "Get all Picked Orders",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by Picker name, Order Ginee ID, or Tracking (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.PickedOrdersListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/picked-orders/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a picked order by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Picked-Orders"
+                ],
+                "summary": "Get a picked order by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pick order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.PickedOrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/products": {
             "get": {
                 "security": [
@@ -5476,6 +5641,20 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.PickedOrdersListResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                },
+                "picked_orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PickedOrderResponse"
+                    }
+                }
+            }
+        },
         "controllers.ProductsListResponse": {
             "type": "object",
             "properties": {
@@ -6146,6 +6325,70 @@ const docTemplate = `{
                 },
                 "tracking": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PickedOrderDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "picked_order_id": {
+                    "type": "integer"
+                },
+                "product": {
+                    "$ref": "#/definitions/models.ProductResponse"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "variant": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PickedOrderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "order": {
+                    "$ref": "#/definitions/models.OrderResponse"
+                },
+                "order_ginee_id": {
+                    "type": "integer"
+                },
+                "picked_by": {
+                    "type": "integer"
+                },
+                "picked_order_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PickedOrderDetailResponse"
+                    }
+                },
+                "picker": {
+                    "$ref": "#/definitions/models.UserResponse"
                 },
                 "updated_at": {
                     "type": "string"

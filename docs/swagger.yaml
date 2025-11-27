@@ -508,6 +508,15 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.PickedOrdersListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      picked_orders:
+        items:
+          $ref: '#/definitions/models.PickedOrderResponse'
+        type: array
+    type: object
   controllers.ProductsListResponse:
     properties:
       pagination:
@@ -959,6 +968,48 @@ definitions:
         type: string
       tracking:
         type: string
+      updated_at:
+        type: string
+    type: object
+  models.PickedOrderDetailResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      picked_order_id:
+        type: integer
+      product:
+        $ref: '#/definitions/models.ProductResponse'
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      updated_at:
+        type: string
+      variant:
+        type: string
+    type: object
+  models.PickedOrderResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      order:
+        $ref: '#/definitions/models.OrderResponse'
+      order_ginee_id:
+        type: integer
+      picked_by:
+        type: integer
+      picked_order_details:
+        items:
+          $ref: '#/definitions/models.PickedOrderDetailResponse'
+        type: array
+      picker:
+        $ref: '#/definitions/models.UserResponse'
       updated_at:
         type: string
     type: object
@@ -2890,6 +2941,107 @@ paths:
       summary: Bulk create orders
       tags:
       - orders
+  /api/picked-orders:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all picked orders with their details and search.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by Picker name, Order Ginee ID, or Tracking (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.PickedOrdersListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all Picked Orders
+      tags:
+      - Picked-Orders
+  /api/picked-orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a picked order by ID.
+      parameters:
+      - description: Pick order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.PickedOrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a picked order by ID
+      tags:
+      - Picked-Orders
   /api/products:
     get:
       consumes:
