@@ -901,6 +901,396 @@
                 }
             }
         },
+        "/api/complains": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get list of all complains with optional date range filtering and search.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "complains"
+                ],
+                "summary": "Get all complains",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by complain code, tracking (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.ComplainsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new complain with automatic product and user details population.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "complains"
+                ],
+                "summary": "Create a new complain",
+                "parameters": [
+                    {
+                        "description": "Create complain request",
+                        "name": "complain",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateComplainRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ComplainResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/complains/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get complain details by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "complains"
+                ],
+                "summary": "Get complain by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Complain ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ComplainResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/complains/{id}/check": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update complain checked status (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "complains"
+                ],
+                "summary": "Update complain check status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Complain ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Check Complain Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateCheckComplainRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ComplainResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/complains/{id}/solution": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update complain solution, total fee, and manage user details (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "complains"
+                ],
+                "summary": "Update complain solution and user details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Complain ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Solution Complain Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateSolutionComplainRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.ComplainResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/expeditions": {
             "get": {
                 "security": [
@@ -5876,6 +6266,37 @@
                 }
             }
         },
+        "controllers.ComplainUserDetailRequest": {
+            "type": "object",
+            "required": [
+                "fee_charge",
+                "operator_id"
+            ],
+            "properties": {
+                "fee_charge": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "operator_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "controllers.ComplainsListResponse": {
+            "type": "object",
+            "properties": {
+                "complains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ComplainResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                }
+            }
+        },
         "controllers.CreateBaseReturnRequest": {
             "type": "object",
             "required": [
@@ -5921,6 +6342,29 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.CreateComplainRequest": {
+            "type": "object",
+            "required": [
+                "channel_id",
+                "description",
+                "store_id",
+                "tracking"
+            ],
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "store_id": {
+                    "type": "integer"
+                },
+                "tracking": {
                     "type": "string"
                 }
             }
@@ -7068,6 +7512,17 @@
                 }
             }
         },
+        "controllers.UpdateCheckComplainRequest": {
+            "type": "object",
+            "required": [
+                "checked"
+            ],
+            "properties": {
+                "checked": {
+                    "type": "boolean"
+                }
+            }
+        },
         "controllers.UpdateComplainedStatusRequest": {
             "type": "object",
             "required": [
@@ -7193,6 +7648,30 @@
                 }
             }
         },
+        "controllers.UpdateSolutionComplainRequest": {
+            "type": "object",
+            "required": [
+                "solution",
+                "total_fee",
+                "user_details"
+            ],
+            "properties": {
+                "solution": {
+                    "type": "string",
+                    "example": "Replacement package sent"
+                },
+                "total_fee": {
+                    "type": "integer",
+                    "example": 50000
+                },
+                "user_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.ComplainUserDetailRequest"
+                    }
+                }
+            }
+        },
         "controllers.UpdateStoreRequest": {
             "type": "object",
             "required": [
@@ -7293,6 +7772,157 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ComplainProductDetailResponse": {
+            "type": "object",
+            "properties": {
+                "complain_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "product": {
+                    "description": "Related data",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ProductResponse"
+                        }
+                    ]
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ComplainResponse": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "description": "Channel info",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ChannelResponse"
+                        }
+                    ]
+                },
+                "channel_id": {
+                    "type": "integer"
+                },
+                "checked": {
+                    "type": "boolean"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "integer"
+                },
+                "creator": {
+                    "description": "User who created the complain",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.UserResponse"
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "order": {
+                    "description": "Order info (includes OrderGineeID)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.OrderResponse"
+                        }
+                    ]
+                },
+                "order_ginee_id": {
+                    "type": "string"
+                },
+                "product_details": {
+                    "description": "Related data",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ComplainProductDetailResponse"
+                    }
+                },
+                "solution": {
+                    "type": "string"
+                },
+                "store": {
+                    "description": "Store info",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.StoreResponse"
+                        }
+                    ]
+                },
+                "store_id": {
+                    "type": "integer"
+                },
+                "total_fee": {
+                    "type": "integer"
+                },
+                "tracking": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ComplainUserDetailResponse"
+                    }
+                }
+            }
+        },
+        "models.ComplainUserDetailResponse": {
+            "type": "object",
+            "properties": {
+                "complain_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "fee_charge": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "operator": {
+                    "description": "Related data",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.UserResponse"
+                        }
+                    ]
+                },
+                "operator_id": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"

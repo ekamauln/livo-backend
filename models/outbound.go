@@ -9,7 +9,7 @@ import (
 type Outbound struct {
 	ID              uint           `gorm:"primaryKey" json:"id"`
 	Tracking        string         `gorm:"unique;not null" json:"tracking" example:"SPXID056205885386"`
-	OutboundBy      uint           `gorm:"not null" json:"outbound_by" example:"1"`
+	OutboundBy      *uint          `gorm:"not null" json:"outbound_by" example:"1"`
 	Expedition      string         `gorm:"not null" json:"expedition" example:"JNE"`
 	ExpeditionColor string         `gorm:"not null" json:"expedition_color" example:"#FF5733"`
 	ExpeditionSlug  string         `gorm:"not null" json:"expedition_slug" example:"jne"`
@@ -26,7 +26,7 @@ type Outbound struct {
 type OutboundResponse struct {
 	ID              uint      `json:"id"`
 	Tracking        string    `json:"tracking"`
-	OutboundBy      uint      `json:"outbound_by"`
+	OutboundBy      *uint     `json:"outbound_by"`
 	Expedition      string    `json:"expedition"`
 	ExpeditionColor string    `json:"expedition_color"`
 	ExpeditionSlug  string    `json:"expedition_slug"`

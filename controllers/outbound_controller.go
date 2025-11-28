@@ -331,7 +331,7 @@ func (oc *OutboundController) CreateOutbound(c *gin.Context) {
 
 	outbound := models.Outbound{
 		Tracking:        req.Tracking,
-		OutboundBy:      userIDUint,
+		OutboundBy:      &userIDUint,
 		Expedition:      expedition,
 		ExpeditionColor: expeditionColor,
 		ExpeditionSlug:  expeditionSlug,

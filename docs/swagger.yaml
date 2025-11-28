@@ -64,6 +64,27 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.ComplainUserDetailRequest:
+    properties:
+      fee_charge:
+        example: 10000
+        type: integer
+      operator_id:
+        example: 1
+        type: integer
+    required:
+    - fee_charge
+    - operator_id
+    type: object
+  controllers.ComplainsListResponse:
+    properties:
+      complains:
+        items:
+          $ref: '#/definitions/models.ComplainResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
   controllers.CreateBaseReturnRequest:
     properties:
       channel_id:
@@ -96,6 +117,22 @@ definitions:
     required:
     - code
     - name
+    type: object
+  controllers.CreateComplainRequest:
+    properties:
+      channel_id:
+        type: integer
+      description:
+        type: string
+      store_id:
+        type: integer
+      tracking:
+        type: string
+    required:
+    - channel_id
+    - description
+    - store_id
+    - tracking
     type: object
   controllers.CreateExpeditionRequest:
     properties:
@@ -867,6 +904,13 @@ definitions:
     - code
     - name
     type: object
+  controllers.UpdateCheckComplainRequest:
+    properties:
+      checked:
+        type: boolean
+    required:
+    - checked
+    type: object
   controllers.UpdateComplainedStatusRequest:
     properties:
       complained:
@@ -954,6 +998,23 @@ definitions:
     - name
     - variant
     type: object
+  controllers.UpdateSolutionComplainRequest:
+    properties:
+      solution:
+        example: Replacement package sent
+        type: string
+      total_fee:
+        example: 50000
+        type: integer
+      user_details:
+        items:
+          $ref: '#/definitions/controllers.ComplainUserDetailRequest'
+        type: array
+    required:
+    - solution
+    - total_fee
+    - user_details
+    type: object
   controllers.UpdateStoreRequest:
     properties:
       code:
@@ -1022,6 +1083,98 @@ definitions:
         type: integer
       name:
         type: string
+      updated_at:
+        type: string
+    type: object
+  models.ComplainProductDetailResponse:
+    properties:
+      complain_id:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      product:
+        allOf:
+        - $ref: '#/definitions/models.ProductResponse'
+        description: Related data
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.ComplainResponse:
+    properties:
+      channel:
+        allOf:
+        - $ref: '#/definitions/models.ChannelResponse'
+        description: Channel info
+      channel_id:
+        type: integer
+      checked:
+        type: boolean
+      code:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      creator:
+        allOf:
+        - $ref: '#/definitions/models.UserResponse'
+        description: User who created the complain
+      description:
+        type: string
+      id:
+        type: integer
+      order:
+        allOf:
+        - $ref: '#/definitions/models.OrderResponse'
+        description: Order info (includes OrderGineeID)
+      order_ginee_id:
+        type: string
+      product_details:
+        description: Related data
+        items:
+          $ref: '#/definitions/models.ComplainProductDetailResponse'
+        type: array
+      solution:
+        type: string
+      store:
+        allOf:
+        - $ref: '#/definitions/models.StoreResponse'
+        description: Store info
+      store_id:
+        type: integer
+      total_fee:
+        type: integer
+      tracking:
+        type: string
+      updated_at:
+        type: string
+      user_details:
+        items:
+          $ref: '#/definitions/models.ComplainUserDetailResponse'
+        type: array
+    type: object
+  models.ComplainUserDetailResponse:
+    properties:
+      complain_id:
+        type: integer
+      created_at:
+        type: string
+      fee_charge:
+        type: integer
+      id:
+        type: integer
+      operator:
+        allOf:
+        - $ref: '#/definitions/models.UserResponse'
+        description: Related data
+      operator_id:
+        type: integer
       updated_at:
         type: string
     type: object
@@ -1988,6 +2141,245 @@ paths:
       summary: Update channel
       tags:
       - channels
+  /api/complains:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all complains with optional date range filtering and
+        search.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by complain code, tracking (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ComplainsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all complains
+      tags:
+      - complains
+    post:
+      consumes:
+      - application/json
+      description: Create a new complain with automatic product and user details population.
+      parameters:
+      - description: Create complain request
+        in: body
+        name: complain
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateComplainRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ComplainResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new complain
+      tags:
+      - complains
+  /api/complains/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get complain details by ID.
+      parameters:
+      - description: Complain ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ComplainResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get complain by ID
+      tags:
+      - complains
+  /api/complains/{id}/check:
+    put:
+      consumes:
+      - application/json
+      description: Update complain checked status (logged-in users only)
+      parameters:
+      - description: Complain ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Check Complain Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateCheckComplainRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ComplainResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update complain check status
+      tags:
+      - complains
+  /api/complains/{id}/solution:
+    put:
+      consumes:
+      - application/json
+      description: Update complain solution, total fee, and manage user details (logged-in
+        users only)
+      parameters:
+      - description: Complain ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Solution Complain Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateSolutionComplainRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ComplainResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update complain solution and user details
+      tags:
+      - complains
   /api/expeditions:
     get:
       consumes:
