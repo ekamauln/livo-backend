@@ -20,10 +20,9 @@ func AutoMigrate(db *gorm.DB) {
 		&models.Expedition{},
 		&models.Store{},
 		&models.Product{},
+		&models.PickedOrder{},
 		&models.Order{},
 		&models.OrderDetail{},
-		&models.PickedOrder{},
-		&models.PickedOrderDetail{},
 		&models.QcRibbon{},
 		&models.QcRibbonDetail{},
 		&models.QcOnline{},
@@ -58,6 +57,29 @@ func AutoMigrate(db *gorm.DB) {
 
 	// Seed default stores
 	seedDefaultStores(db)
+
+	// Fix column types
+	fixColumnTypes(db)
+}
+
+// fixColumnTypes fixes column types that GORM auto migrate might miss or handle incorrectly
+func fixColumnTypes(db *gorm.DB) {
+	// Fix order_ginee_id type in orders table (change from bigint to varchar)
+	// We use raw SQL because changing type from int to string might need explicit handling depending on DB
+	// But for Postgres, it usually handles it. We use a safe approach.
+	if db.Migrator().HasTable(&models.Order{}) {
+		// Check if column exists
+		if db.Migrator().HasColumn(&models.Order{}, "OrderGineeID") {
+			// We try to alter the column type.
+			// Note: This specific syntax is for PostgreSQL.
+			err := db.Exec("ALTER TABLE orders ALTER COLUMN order_ginee_id TYPE VARCHAR(255)").Error
+			if err != nil {
+				log.Printf("⚠️ Warning: Failed to alter order_ginee_id column type: %v", err)
+			} else {
+				log.Println("✓ Fixed order_ginee_id column type to VARCHAR(255)")
+			}
+		}
+	}
 }
 
 // seedDefaultRoles creates default roles if they don't exist

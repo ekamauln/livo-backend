@@ -257,76 +257,6 @@ func (oc *OrderController) GetOrder(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, "Order retrieved successfully", order.ToOrderResponse())
 }
 
-// CreateOrder godoc
-// @Summary Create a new order
-// @Description Create a new order with order details.
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body CreateOrderRequest true "Create order request"
-// @Success 201 {object} utilities.Response{data=models.OrderResponse}
-// @Failure 400 {object} utilities.Response
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Router /api/orders [post]
-func (oc *OrderController) CreateOrder(c *gin.Context) {
-	var req CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utilities.ValidationErrorResponse(c, err)
-		return
-	}
-
-	// Check if order with same OrderGineeID already exists
-	var existingOrder models.Order
-	if err := oc.DB.Where("order_ginee_id = ?", req.OrderGineeID).First(&existingOrder).Error; err == nil {
-		utilities.ErrorResponse(c, http.StatusConflict, "Order already exists", "order with this ginee ID already exists")
-		return
-	}
-
-	// Create order
-	order := models.Order{
-		OrderGineeID: req.OrderGineeID,
-		Status:       "ready to pick", // Always set to "ready to pick"
-		Channel:      req.Channel,
-		Store:        req.Store,
-		Buyer:        req.Buyer,
-		Address:      req.Address,
-		Courier:      req.Courier,
-		Tracking:     req.Tracking,
-	}
-
-	if req.SentBefore != "" {
-		if parsedTime, err := time.Parse("2006-01-02 15:04:00", req.SentBefore); err == nil {
-			order.SentBefore = &parsedTime
-		} else if parsedTime, err := time.Parse("2006-01-02 15:04", req.SentBefore); err == nil {
-			order.SentBefore = &parsedTime
-		}
-	}
-
-	// Create order details
-	for _, detailReq := range req.OrderDetails {
-		orderDetail := models.OrderDetail{
-			Sku:         detailReq.Sku,
-			ProductName: detailReq.ProductName,
-			Variant:     detailReq.Variant,
-			Quantity:    detailReq.Quantity,
-		}
-		order.OrderDetails = append(order.OrderDetails, orderDetail)
-	}
-
-	// Create order with details in a transaction
-	if err := oc.DB.Create(&order).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to create order", err.Error())
-		return
-	}
-
-	// Load order with details for response
-	oc.DB.Preload("OrderDetails").Preload("Picker").First(&order, order.ID)
-
-	utilities.SuccessResponse(c, http.StatusCreated, "Order created successfully", order.ToOrderResponse())
-}
-
 // BulkCreateOrders godoc
 // @Summary Bulk create orders
 // @Description Create multiple orders at once, skipping duplicates.
@@ -366,21 +296,19 @@ func (oc *OrderController) BulkCreateOrders(c *gin.Context) {
 
 		// Create order
 		order := models.Order{
-			OrderGineeID: orderReq.OrderGineeID,
-			Status:       "ready to pick", // Always set to "ready to pick"
-			Channel:      orderReq.Channel,
-			Store:        orderReq.Store,
-			Buyer:        orderReq.Buyer,
-			Address:      orderReq.Address,
-			Courier:      orderReq.Courier,
-			Tracking:     orderReq.Tracking,
+			OrderGineeID:     orderReq.OrderGineeID,
+			ProcessingStatus: "ready to pick", // Always set to "ready to pick"
+			Channel:          orderReq.Channel,
+			Store:            orderReq.Store,
+			Buyer:            orderReq.Buyer,
+			Address:          orderReq.Address,
+			Courier:          orderReq.Courier,
+			Tracking:         orderReq.Tracking,
 		}
 
 		if orderReq.SentBefore != "" {
 			if parsedTime, err := time.Parse("2006-01-02 15:04:00", orderReq.SentBefore); err == nil {
-				order.SentBefore = &parsedTime
-			} else if parsedTime, err := time.Parse("2006-01-02 15:04", orderReq.SentBefore); err == nil {
-				order.SentBefore = &parsedTime
+				order.SentBefore = parsedTime
 			}
 		}
 
@@ -536,8 +464,8 @@ func (oc *OrderController) UpdateOrderDetail(c *gin.Context) {
 	}
 
 	// Check if order status allows modification
-	if order.Status != "ready to pick" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order details when status is '%s'. Order must be in 'ready to pick' status", order.Status))
+	if order.ProcessingStatus == "picking process" || order.ProcessingStatus != "qc process" {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
 		return
 	}
 
@@ -610,8 +538,8 @@ func (oc *OrderController) AddOrderDetail(c *gin.Context) {
 	}
 
 	// Check if order status allows modification
-	if order.Status != "ready to pick" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot add order details when status is '%s'. Order must be in 'ready to pick' status", order.Status))
+	if order.ProcessingStatus == "picking process" || order.ProcessingStatus == "qc process" {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot add order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
 		return
 	}
 
@@ -678,8 +606,8 @@ func (oc *OrderController) RemoveOrderDetail(c *gin.Context) {
 	}
 
 	// Check if order status allows modification
-	if order.Status != "ready to pick" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot remove order details when status is '%s'. Order must be in 'ready to pick' status", order.Status))
+	if order.ProcessingStatus == "picking process" || order.ProcessingStatus == "qc process" {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot remove order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
 		return
 	}
 

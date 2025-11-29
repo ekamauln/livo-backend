@@ -97,26 +97,17 @@ func (poc *PickedOrderController) GetPickedOrders(c *gin.Context) {
 	}
 
 	// Get pick orders with pagination, search filter, and order by ID desc
-	if err := query.Preload("PickedOrderDetails").
-		Preload("Picker.UserRoles.Role").
-		Preload("Picker.UserRoles.Assigner").
+	if err := query.Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
 		Preload("Order.OrderDetails").
-		Preload("Order.Picker.UserRoles.Role").
-		Preload("Order.Picker.UserRoles.Assigner").
+		Preload("Order.PickOperator.UserRoles.Role").
+		Preload("Order.PickOperator.UserRoles.Assigner").
 		Order("picked_orders.id DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&pickedOrders).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve pick orders", err.Error())
 		return
-	}
-
-	// Load products for each pick order
-	for i := range pickedOrders {
-		if err := pickedOrders[i].LoadProducts(poc.DB); err != nil {
-			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to load products for pick order details", err.Error())
-			return
-		}
 	}
 
 	// Convert to response format
@@ -178,24 +169,17 @@ func (poc *PickedOrderController) GetPickedOrder(c *gin.Context) {
 	pickedOrderId := c.Param("id")
 
 	var pickedOrder models.PickedOrder
-	if err := poc.DB.Preload("PickedOrderDetails").
-		Preload("Picker.UserRoles.Role").
-		Preload("Picker.UserRoles.Assigner").
+	if err := poc.DB.Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
 		Preload("Order.OrderDetails").
-		Preload("Order.Picker.UserRoles.Role").
-		Preload("Order.Picker.UserRoles.Assigner").
+		Preload("Order.PickOperator.UserRoles.Role").
+		Preload("Order.PickOperator.UserRoles.Assigner").
 		First(&pickedOrder, pickedOrderId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Picked order not found", err.Error())
 			return
 		}
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve picked order", err.Error())
-		return
-	}
-
-	// Load products for pick order details
-	if err := pickedOrder.LoadProducts(poc.DB); err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to load products for picked order details", err.Error())
 		return
 	}
 

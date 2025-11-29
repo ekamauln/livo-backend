@@ -381,11 +381,17 @@ definitions:
         type: string
       cancelled_by:
         type: string
+      changed_at:
+        type: string
+      changed_by:
+        type: string
       channel:
         type: string
       courier:
         type: string
       created_at:
+        type: string
+      event_status:
         type: string
       id:
         type: integer
@@ -403,9 +409,9 @@ definitions:
         type: string
       picked_by:
         type: string
-      sent_before:
+      processing_status:
         type: string
-      status:
+      sent_before:
         type: string
       store:
         type: string
@@ -447,11 +453,17 @@ definitions:
         type: string
       cancelled_by:
         type: string
+      changed_at:
+        type: string
+      changed_by:
+        type: string
       channel:
         type: string
       courier:
         type: string
       created_at:
+        type: string
+      event_status:
         type: string
       id:
         type: integer
@@ -469,9 +481,9 @@ definitions:
         type: string
       picked_by:
         type: string
-      sent_before:
+      processing_status:
         type: string
-      status:
+      sent_before:
         type: string
       store:
         type: string
@@ -1243,6 +1255,10 @@ definitions:
         type: string
       cancelled_by:
         type: string
+      changed_at:
+        type: string
+      changed_by:
+        type: string
       channel:
         type: string
       complained:
@@ -1251,6 +1267,8 @@ definitions:
         type: string
       created_at:
         type: string
+      event_status:
+        type: string
       id:
         type: integer
       order_details:
@@ -1258,7 +1276,7 @@ definitions:
         items:
           $ref: '#/definitions/models.OrderDetailResponse'
         type: array
-      order_id:
+      order_ginee_id:
         type: string
       pending_at:
         type: string
@@ -1268,9 +1286,9 @@ definitions:
         type: string
       picked_by:
         type: string
-      sent_before:
+      processing_status:
         type: string
-      status:
+      sent_before:
         type: string
       store:
         type: string
@@ -1306,27 +1324,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.PickedOrderDetailResponse:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: integer
-      picked_order_id:
-        type: integer
-      product:
-        $ref: '#/definitions/models.ProductResponse'
-      product_name:
-        type: string
-      quantity:
-        type: integer
-      sku:
-        type: string
-      updated_at:
-        type: string
-      variant:
-        type: string
-    type: object
   models.PickedOrderResponse:
     properties:
       created_at:
@@ -1334,15 +1331,13 @@ definitions:
       id:
         type: integer
       order:
-        $ref: '#/definitions/models.OrderResponse'
-      order_ginee_id:
+        allOf:
+        - $ref: '#/definitions/models.OrderResponse'
+        description: Related data
+      order_id:
         type: integer
       picked_by:
         type: integer
-      picked_order_details:
-        items:
-          $ref: '#/definitions/models.PickedOrderDetailResponse'
-        type: array
       picker:
         $ref: '#/definitions/models.UserResponse'
       updated_at:
@@ -1395,12 +1390,11 @@ definitions:
       id:
         type: integer
       order:
-        allOf:
-        - $ref: '#/definitions/models.OrderResponse'
-        description: Related data
+        $ref: '#/definitions/models.OrderResponse'
       qc_by:
         type: integer
       qc_online_details:
+        description: Related data
         items:
           $ref: '#/definitions/models.QcOnlineDetailResponse'
         type: array
@@ -1437,14 +1431,13 @@ definitions:
       id:
         type: integer
       order:
-        allOf:
-        - $ref: '#/definitions/models.OrderResponse'
-        description: Related data
+        $ref: '#/definitions/models.OrderResponse'
       qc_by:
         type: integer
       qc_operator:
         $ref: '#/definitions/models.UserResponse'
       qc_ribbon_details:
+        description: Related data
         items:
           $ref: '#/definitions/models.QcRibbonDetailResponse'
         type: array
@@ -2617,8 +2610,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get list of all orders with "ready to pick" status, Optional search
-        by order ID or tracking number.
+      description: Get list of all orders with "ready to pick" processing status,
+        Optional search by order ID or tracking number.
       parameters:
       - default: 1
         description: Page number
@@ -2704,8 +2697,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Change order status from "picking process" to "picking complete"
-        and create pick order records
+      description: Change order processing status from "picking process" to "picking
+        complete" and create pick order records
       parameters:
       - description: Order ID
         in: path
@@ -2749,8 +2742,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Change order status from "picking process" to "pending picking"
-        and unassign picker
+      description: Change order processing status from "picking process" to "pending
+        picking" and unassign picker
       parameters:
       - description: Order ID
         in: path
@@ -2794,8 +2787,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Change order status from "ready to pick" to "picking process" and
-        assign to current picker
+      description: Change order processing status from "ready to pick" to "picking
+        process" and assign to current picker
       parameters:
       - description: Order ID
         in: path
@@ -2840,7 +2833,7 @@ paths:
       consumes:
       - application/json
       description: 'Get list of orders currently being picked by the logged-in user
-        (status: "picking process")'
+        (processing status: "picking process")'
       produces:
       - application/json
       responses:
@@ -3310,46 +3303,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get all orders
-      tags:
-      - orders
-    post:
-      consumes:
-      - application/json
-      description: Create a new order with order details.
-      parameters:
-      - description: Create order request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.CreateOrderRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.OrderResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Create a new order
       tags:
       - orders
   /api/orders/{id}:

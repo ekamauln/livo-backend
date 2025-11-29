@@ -47,17 +47,17 @@ type QcOnlineDetailResponse struct {
 }
 
 type QcOnlineResponse struct {
-	ID              uint                     `json:"id"`
-	Tracking        string                   `json:"tracking"`
-	QcBy            *uint                    `json:"qc_by"`
-	Complained      bool                     `json:"complained"`
-	CreatedAt       time.Time                `json:"created_at"`
-	UpdatedAt       time.Time                `json:"updated_at"`
-	QcOnlineDetails []QcOnlineDetailResponse `json:"qc_online_details"`
+	ID         uint      `json:"id"`
+	Tracking   string    `json:"tracking"`
+	QcBy       *uint     `json:"qc_by"`
+	Complained bool      `json:"complained"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 
 	// Related data
-	Order      *OrderResponse `json:"order,omitempty"`
-	QcOperator *UserResponse  `json:"qc_operator,omitempty"`
+	QcOnlineDetails []QcOnlineDetailResponse `json:"qc_online_details"`
+	Order           *OrderResponse           `json:"order,omitempty"`
+	QcOperator      *UserResponse            `json:"qc_operator,omitempty"`
 }
 
 // ToQcOnlineResponse converts QcOnline to QcOnlineResponse

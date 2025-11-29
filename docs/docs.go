@@ -1689,7 +1689,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get list of all orders with \"ready to pick\" status, Optional search by order ID or tracking number.",
+                "description": "Get list of all orders with \"ready to pick\" processing status, Optional search by order ID or tracking number.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1763,7 +1763,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get list of orders currently being picked by the logged-in user (status: \"picking process\")",
+                "description": "Get list of orders currently being picked by the logged-in user (processing status: \"picking process\")",
                 "consumes": [
                     "application/json"
                 ],
@@ -1885,7 +1885,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change order status from \"picking process\" to \"picking complete\" and create pick order records",
+                "description": "Change order processing status from \"picking process\" to \"picking complete\" and create pick order records",
                 "consumes": [
                     "application/json"
                 ],
@@ -1958,7 +1958,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change order status from \"picking process\" to \"pending picking\" and unassign picker",
+                "description": "Change order processing status from \"picking process\" to \"pending picking\" and unassign picker",
                 "consumes": [
                     "application/json"
                 ],
@@ -2031,7 +2031,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change order status from \"ready to pick\" to \"picking process\" and assign to current picker",
+                "description": "Change order processing status from \"ready to pick\" to \"picking process\" and assign to current picker",
                 "consumes": [
                     "application/json"
                 ],
@@ -2799,73 +2799,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/controllers.OrdersListResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create a new order with order details.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "orders"
-                ],
-                "summary": "Create a new order",
-                "parameters": [
-                    {
-                        "description": "Create order request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.CreateOrderRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utilities.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.OrderResponse"
                                         }
                                     }
                                 }
@@ -6729,6 +6662,12 @@ const docTemplate = `{
                 "cancelled_by": {
                     "type": "string"
                 },
+                "changed_at": {
+                    "type": "string"
+                },
+                "changed_by": {
+                    "type": "string"
+                },
                 "channel": {
                     "type": "string"
                 },
@@ -6736,6 +6675,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "event_status": {
                     "type": "string"
                 },
                 "id": {
@@ -6762,10 +6704,10 @@ const docTemplate = `{
                 "picked_by": {
                     "type": "string"
                 },
-                "sent_before": {
+                "processing_status": {
                     "type": "string"
                 },
-                "status": {
+                "sent_before": {
                     "type": "string"
                 },
                 "store": {
@@ -6831,6 +6773,12 @@ const docTemplate = `{
                 "cancelled_by": {
                     "type": "string"
                 },
+                "changed_at": {
+                    "type": "string"
+                },
+                "changed_by": {
+                    "type": "string"
+                },
                 "channel": {
                     "type": "string"
                 },
@@ -6838,6 +6786,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "event_status": {
                     "type": "string"
                 },
                 "id": {
@@ -6864,10 +6815,10 @@ const docTemplate = `{
                 "picked_by": {
                     "type": "string"
                 },
-                "sent_before": {
+                "processing_status": {
                     "type": "string"
                 },
-                "status": {
+                "sent_before": {
                     "type": "string"
                 },
                 "store": {
@@ -8039,6 +7990,12 @@ const docTemplate = `{
                 "cancelled_by": {
                     "type": "string"
                 },
+                "changed_at": {
+                    "type": "string"
+                },
+                "changed_by": {
+                    "type": "string"
+                },
                 "channel": {
                     "type": "string"
                 },
@@ -8051,6 +8008,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "event_status": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -8061,7 +8021,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.OrderDetailResponse"
                     }
                 },
-                "order_id": {
+                "order_ginee_id": {
                     "type": "string"
                 },
                 "pending_at": {
@@ -8076,10 +8036,10 @@ const docTemplate = `{
                 "picked_by": {
                     "type": "string"
                 },
-                "sent_before": {
+                "processing_status": {
                     "type": "string"
                 },
-                "status": {
+                "sent_before": {
                     "type": "string"
                 },
                 "store": {
@@ -8136,38 +8096,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.PickedOrderDetailResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "picked_order_id": {
-                    "type": "integer"
-                },
-                "product": {
-                    "$ref": "#/definitions/models.ProductResponse"
-                },
-                "product_name": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "variant": {
-                    "type": "string"
-                }
-            }
-        },
         "models.PickedOrderResponse": {
             "type": "object",
             "properties": {
@@ -8178,19 +8106,18 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "order": {
-                    "$ref": "#/definitions/models.OrderResponse"
+                    "description": "Related data",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.OrderResponse"
+                        }
+                    ]
                 },
-                "order_ginee_id": {
+                "order_id": {
                     "type": "integer"
                 },
                 "picked_by": {
                     "type": "integer"
-                },
-                "picked_order_details": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.PickedOrderDetailResponse"
-                    }
                 },
                 "picker": {
                     "$ref": "#/definitions/models.UserResponse"
@@ -8271,17 +8198,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "order": {
-                    "description": "Related data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.OrderResponse"
-                        }
-                    ]
+                    "$ref": "#/definitions/models.OrderResponse"
                 },
                 "qc_by": {
                     "type": "integer"
                 },
                 "qc_online_details": {
+                    "description": "Related data",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.QcOnlineDetailResponse"
@@ -8337,12 +8260,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "order": {
-                    "description": "Related data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.OrderResponse"
-                        }
-                    ]
+                    "$ref": "#/definitions/models.OrderResponse"
                 },
                 "qc_by": {
                     "type": "integer"
@@ -8351,6 +8269,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.UserResponse"
                 },
                 "qc_ribbon_details": {
+                    "description": "Related data",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.QcRibbonDetailResponse"

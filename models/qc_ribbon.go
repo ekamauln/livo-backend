@@ -47,17 +47,17 @@ type QcRibbonDetailResponse struct {
 }
 
 type QcRibbonResponse struct {
-	ID              uint                     `json:"id"`
-	Tracking        string                   `json:"tracking"`
-	QcBy            *uint                    `json:"qc_by"`
-	Complained      bool                     `json:"complained"`
-	CreatedAt       time.Time                `json:"created_at"`
-	UpdatedAt       time.Time                `json:"updated_at"`
-	QcRibbonDetails []QcRibbonDetailResponse `json:"qc_ribbon_details"`
+	ID         uint      `json:"id"`
+	Tracking   string    `json:"tracking"`
+	QcBy       *uint     `json:"qc_by"`
+	Complained bool      `json:"complained"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 
 	// Related data
-	Order      *OrderResponse `json:"order,omitempty"`
-	QcOperator *UserResponse  `json:"qc_operator,omitempty"`
+	QcRibbonDetails []QcRibbonDetailResponse `json:"qc_ribbon_details"`
+	Order           *OrderResponse           `json:"order,omitempty"`
+	QcOperator      *UserResponse            `json:"qc_operator,omitempty"`
 }
 
 // ToQcRibbonResponse converts QcRibbon to QcRibbonResponse

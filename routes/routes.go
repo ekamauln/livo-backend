@@ -15,7 +15,7 @@ import (
 )
 
 // SetupRoutes configures all routes for the application
-func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController, outboundController *controllers.OutboundController, returnController *controllers.ReturnController, mobileReturnController *controllers.MobileReturnController, complainController *controllers.ComplainController) *gin.Engine {
+func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController, outboundController *controllers.OutboundController, returnController *controllers.ReturnController, mobileReturnController *controllers.MobileReturnController, complainController *controllers.ComplainController, orderController *controllers.OrderController, mobileOrderController *controllers.MobileOrderController) *gin.Engine {
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
 
@@ -183,6 +183,8 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	SetupReturnRoutes(api, cfg, returnController)
 	SetupMobileReturnRoutes(api, cfg, mobileReturnController)
 	SetupComplainRoutes(api, cfg, complainController)
+	SetupOrderRoutes(api, cfg, orderController)
+	SetupMobileOrderRoutes(api, cfg, mobileOrderController)
 
 	return router
 }

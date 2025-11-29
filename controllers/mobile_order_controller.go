@@ -24,7 +24,7 @@ func NewMobileOrderController(db *gorm.DB) *MobileOrderController {
 
 // GetMobileOrders godoc
 // @Summary Get all orders by mobile
-// @Description Get list of all orders with "ready to pick" status, Optional search by order ID or tracking number.
+// @Description Get list of all orders with "ready to pick" processing status, Optional search by order ID or tracking number.
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
@@ -49,7 +49,7 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 	var total int64
 
 	// Build base query for "ready to pick" orders
-	query := moc.DB.Model(&models.Order{}).Where("status IN = ?", []string{"ready to pick", "pending picking"})
+	query := moc.DB.Model(&models.Order{}).Where("processing_status IN = ?", []string{"ready to pick", "pending picking"})
 
 	// Add search conditions if search parameter is provided
 	if search != "" {
@@ -114,25 +114,28 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 		}
 
 		orderResponses[i] = MobileOrderListResponse{
-			ID:           order.ID,
-			OrderGineeID: order.OrderGineeID,
-			Status:       order.Status,
-			Channel:      order.Channel,
-			Store:        order.Store,
-			Buyer:        order.Buyer,
-			Address:      order.Address,
-			Courier:      order.Courier,
-			Tracking:     order.Tracking,
-			SentBefore:   order.SentBefore.Format("2006-01-02 15:04:05"),
-			PickedBy:     order.Picker.FullName,
-			PickedAt:     order.PickedAt.Format("2006-01-02 15:04:05"),
-			PendingBy:    order.PendingOperator.FullName,
-			PendingAt:    order.PendingAt.Format("2006-01-02 15:04:05"),
-			CancelledBy:  order.Canceller.FullName,
-			CancelledAt:  order.CancelledAt.Format("2006-01-02 15:04:05"),
-			CreatedAt:    order.CreatedAt,
-			UpdatedAt:    order.UpdatedAt,
-			OrderDetails: orderDetailsWithProduct,
+			ID:               order.ID,
+			OrderGineeID:     order.OrderGineeID,
+			ProcessingStatus: order.ProcessingStatus,
+			EventStatus:      order.EventStatus,
+			Channel:          order.Channel,
+			Store:            order.Store,
+			Buyer:            order.Buyer,
+			Address:          order.Address,
+			Courier:          order.Courier,
+			Tracking:         order.Tracking,
+			SentBefore:       order.SentBefore.Format("2006-01-02 15:04:05"),
+			PickedBy:         order.PickOperator.FullName,
+			PickedAt:         order.PickedAt.Format("2006-01-02 15:04:05"),
+			PendingBy:        order.PendingOperator.FullName,
+			PendingAt:        order.PendingAt.Format("2006-01-02 15:04:05"),
+			ChangedBy:        order.ChangeOperator.FullName,
+			ChangedAt:        order.ChangedAt.Format("2006-01-02 15:04:05"),
+			CancelledBy:      order.CancelOperator.FullName,
+			CancelledAt:      order.CancelledAt.Format("2006-01-02 15:04:05"),
+			CreatedAt:        order.CreatedAt,
+			UpdatedAt:        order.UpdatedAt,
+			OrderDetails:     orderDetailsWithProduct,
 		}
 	}
 
@@ -150,7 +153,7 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 
 // GetMyPickingOrders godoc
 // @Summary Get my ongoing picking orders by mobile
-// @Description Get list of orders currently being picked by the logged-in user (status: "picking process")
+// @Description Get list of orders currently being picked by the logged-in user (processing status: "picking process")
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
@@ -197,7 +200,7 @@ func (moc *MobileOrderController) GetMyPickingOrders(c *gin.Context) {
 
 // PickingOrder godoc
 // @Summary Pick an order for processing by mobile
-// @Description Change order status from "ready to pick" to "picking process" and assign to current picker
+// @Description Change order processing status from "ready to pick" to "picking process" and assign to current picker
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
@@ -232,7 +235,7 @@ func (moc *MobileOrderController) PickingOrder(c *gin.Context) {
 
 	var order models.Order
 	// Find order and check if it's available to pick
-	if err := moc.DB.Where("id = ? AND status IN = ?", orderID, []string{"ready to pick", "pending picking"}).First(&order).Error; err != nil {
+	if err := moc.DB.Where("id = ? AND processing_status IN = ?", orderID, []string{"ready to pick", "pending picking"}).First(&order).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not available for picking", "order not found or already picked")
 		} else {
@@ -243,7 +246,7 @@ func (moc *MobileOrderController) PickingOrder(c *gin.Context) {
 
 	// Update order status and assign picker
 	now := time.Now()
-	order.Status = "picking process"
+	order.ProcessingStatus = "picking process"
 	order.PickedBy = &userID
 	order.PickedAt = &now
 
@@ -345,25 +348,28 @@ func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 	}
 
 	response := MobileOrderDetailResponse{
-		ID:           order.ID,
-		OrderGineeID: order.OrderGineeID,
-		Status:       order.Status,
-		Channel:      order.Channel,
-		Store:        order.Store,
-		Buyer:        order.Buyer,
-		Address:      order.Address,
-		Courier:      order.Courier,
-		Tracking:     order.Tracking,
-		SentBefore:   order.SentBefore.Format("2006-01-02 15:04:05"),
-		PickedBy:     order.Picker.FullName,
-		PickedAt:     order.PickedAt.Format("2006-01-02 15:04:05"),
-		PendingBy:    order.PendingOperator.FullName,
-		PendingAt:    order.PendingAt.Format("2006-01-02 15:04:05"),
-		CancelledBy:  order.Canceller.FullName,
-		CancelledAt:  order.CancelledAt.Format("2006-01-02 15:04:05"),
-		CreatedAt:    order.CreatedAt,
-		UpdatedAt:    order.UpdatedAt,
-		OrderDetails: orderDetailsWithProduct,
+		ID:               order.ID,
+		OrderGineeID:     order.OrderGineeID,
+		ProcessingStatus: order.ProcessingStatus,
+		EventStatus:      order.EventStatus,
+		Channel:          order.Channel,
+		Store:            order.Store,
+		Buyer:            order.Buyer,
+		Address:          order.Address,
+		Courier:          order.Courier,
+		Tracking:         order.Tracking,
+		SentBefore:       order.SentBefore.Format("2006-01-02 15:04:05"),
+		PickedBy:         order.PickOperator.FullName,
+		PickedAt:         order.PickedAt.Format("2006-01-02 15:04:05"),
+		PendingBy:        order.PendingOperator.FullName,
+		PendingAt:        order.PendingAt.Format("2006-01-02 15:04:05"),
+		ChangedBy:        order.ChangeOperator.FullName,
+		ChangedAt:        order.ChangedAt.Format("2006-01-02 15:04:05"),
+		CancelledBy:      order.CancelOperator.FullName,
+		CancelledAt:      order.CancelledAt.Format("2006-01-02 15:04:05"),
+		CreatedAt:        order.CreatedAt,
+		UpdatedAt:        order.UpdatedAt,
+		OrderDetails:     orderDetailsWithProduct,
 	}
 
 	utilities.SuccessResponse(c, http.StatusOK, "Order details retrieved successfully", response)
@@ -371,7 +377,7 @@ func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
 
 // CompletePickingOrder godoc
 // @Summary Complete picking process by mobile
-// @Description Change order status from "picking process" to "picking complete" and create pick order records
+// @Description Change order processing status from "picking process" to "picking complete" and create pick order records
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
@@ -413,8 +419,8 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 	}()
 
 	var order models.Order
-	// Find order assigned to current picker with "picking process" status
-	if err := tx.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
+	// Find order assigned to current picker with "picking process" processing status
+	if err := tx.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND processing_status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not in picking process", "order not found or not in picking process")
@@ -426,8 +432,8 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 
 	// Create PickOrder record
 	pickOrder := models.PickedOrder{
-		OrderGineeID: order.ID,
-		PickedBy:     userID,
+		OrderID:  order.ID,
+		PickedBy: userID,
 	}
 
 	if err := tx.Create(&pickOrder).Error; err != nil {
@@ -436,25 +442,8 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 		return
 	}
 
-	// Create PickOrderDetail records from OrderDetails
-	for _, orderDetail := range order.OrderDetails {
-		pickOrderDetail := models.PickedOrderDetail{
-			PickedOrderID: pickOrder.ID,
-			Sku:           orderDetail.Sku,
-			ProductName:   orderDetail.ProductName,
-			Variant:       orderDetail.Variant,
-			Quantity:      orderDetail.Quantity,
-		}
-
-		if err := tx.Create(&pickOrderDetail).Error; err != nil {
-			tx.Rollback()
-			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to create pick order detail", err.Error())
-			return
-		}
-	}
-
-	// Update order status to complete
-	order.Status = "picking complete"
+	// Update order processing status to complete
+	order.ProcessingStatus = "picking complete"
 
 	// Save the changes
 	if err := tx.Save(&order).Error; err != nil {
@@ -477,7 +466,7 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 
 // PendingPickingOrder godoc
 // @Summary Pending picking process by mobile
-// @Description Change order status from "picking process" to "pending picking" and unassign picker
+// @Description Change order processing status from "picking process" to "pending picking" and unassign picker
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
@@ -511,8 +500,8 @@ func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
 	}
 
 	var order models.Order
-	// Find order assigned to current picker with "picking process" status
-	if err := moc.DB.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
+	// Find order assigned to current picker with "picking process" processing status
+	if err := moc.DB.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND processing_status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not in picking process", "order not found or not in picking process")
 		} else {
@@ -521,11 +510,11 @@ func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
 		return
 	}
 
-	// Update order status to "pending picking" and unassign picker
-	if err := moc.DB.Model(&order).Preload("OrderDetails").Select("status", "picker_id", "picked_at").Updates(models.Order{
-		Status:   "pending picking",
-		PickedBy: nil,
-		PickedAt: nil,
+	// Update order processing status to "pending picking" and unassign picker
+	if err := moc.DB.Model(&order).Preload("OrderDetails").Select("processing_status", "picker_id", "picked_at").Updates(models.Order{
+		ProcessingStatus: "pending picking",
+		PickedBy:         nil,
+		PickedAt:         nil,
 	}).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to pending picking order", err.Error())
 		return
@@ -536,47 +525,53 @@ func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
 
 // Response struct by mobile endpoints
 type MobileOrderDetailResponse struct {
-	ID           uint                           `json:"id"`
-	OrderGineeID string                         `json:"order_ginee_id"`
-	Status       string                         `json:"status"`
-	Channel      string                         `json:"channel"`
-	Store        string                         `json:"store"`
-	Buyer        string                         `json:"buyer"`
-	Address      string                         `json:"address"`
-	Courier      string                         `json:"courier"`
-	Tracking     string                         `json:"tracking"`
-	SentBefore   string                         `json:"sent_before"`
-	PickedBy     string                         `json:"picked_by"`
-	PickedAt     string                         `json:"picked_at"`
-	PendingBy    string                         `json:"pending_by"`
-	PendingAt    string                         `json:"pending_at"`
-	CancelledBy  string                         `json:"cancelled_by"`
-	CancelledAt  string                         `json:"cancelled_at"`
-	CreatedAt    time.Time                      `json:"created_at"`
-	UpdatedAt    time.Time                      `json:"updated_at"`
-	OrderDetails []MobileOrderDetailWithProduct `json:"order_details"`
+	ID               uint                           `json:"id"`
+	OrderGineeID     string                         `json:"order_ginee_id"`
+	ProcessingStatus string                         `json:"processing_status"`
+	EventStatus      *string                        `json:"event_status"`
+	Channel          string                         `json:"channel"`
+	Store            string                         `json:"store"`
+	Buyer            string                         `json:"buyer"`
+	Address          string                         `json:"address"`
+	Courier          string                         `json:"courier"`
+	Tracking         string                         `json:"tracking"`
+	SentBefore       string                         `json:"sent_before"`
+	PickedBy         string                         `json:"picked_by"`
+	PickedAt         string                         `json:"picked_at"`
+	PendingBy        string                         `json:"pending_by"`
+	PendingAt        string                         `json:"pending_at"`
+	ChangedBy        string                         `json:"changed_by"`
+	ChangedAt        string                         `json:"changed_at"`
+	CancelledBy      string                         `json:"cancelled_by"`
+	CancelledAt      string                         `json:"cancelled_at"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+	OrderDetails     []MobileOrderDetailWithProduct `json:"order_details"`
 }
 
 type MobileOrderListResponse struct {
-	ID           uint                           `json:"id"`
-	OrderGineeID string                         `json:"order_ginee_id"`
-	Status       string                         `json:"status"`
-	Channel      string                         `json:"channel"`
-	Store        string                         `json:"store"`
-	Buyer        string                         `json:"buyer"`
-	Address      string                         `json:"address"`
-	Courier      string                         `json:"courier"`
-	Tracking     string                         `json:"tracking"`
-	SentBefore   string                         `json:"sent_before"`
-	PickedBy     string                         `json:"picked_by"`
-	PickedAt     string                         `json:"picked_at"`
-	PendingBy    string                         `json:"pending_by"`
-	PendingAt    string                         `json:"pending_at"`
-	CancelledBy  string                         `json:"cancelled_by"`
-	CancelledAt  string                         `json:"cancelled_at"`
-	CreatedAt    time.Time                      `json:"created_at"`
-	UpdatedAt    time.Time                      `json:"updated_at"`
-	OrderDetails []MobileOrderDetailWithProduct `json:"order_details"`
+	ID               uint                           `json:"id"`
+	OrderGineeID     string                         `json:"order_ginee_id"`
+	ProcessingStatus string                         `json:"processing_status"`
+	EventStatus      *string                        `json:"event_status"`
+	Channel          string                         `json:"channel"`
+	Store            string                         `json:"store"`
+	Buyer            string                         `json:"buyer"`
+	Address          string                         `json:"address"`
+	Courier          string                         `json:"courier"`
+	Tracking         string                         `json:"tracking"`
+	SentBefore       string                         `json:"sent_before"`
+	PickedBy         string                         `json:"picked_by"`
+	PickedAt         string                         `json:"picked_at"`
+	PendingBy        string                         `json:"pending_by"`
+	PendingAt        string                         `json:"pending_at"`
+	ChangedBy        string                         `json:"changed_by"`
+	ChangedAt        string                         `json:"changed_at"`
+	CancelledBy      string                         `json:"cancelled_by"`
+	CancelledAt      string                         `json:"cancelled_at"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+	OrderDetails     []MobileOrderDetailWithProduct `json:"order_details"`
 }
 
 type MobileOrdersListResponse struct {
