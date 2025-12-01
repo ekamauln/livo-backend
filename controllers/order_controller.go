@@ -66,7 +66,7 @@ func (oc *OrderController) UpdateOrderComplainedStatus(c *gin.Context) {
 	}
 
 	// Load order with details for response
-	oc.DB.Preload("OrderDetails").Preload("Picker.UserRoles.Role").Preload("Picker.UserRoles.Assigner").First(&order, order.ID)
+	oc.DB.Preload("OrderDetails").Preload("PickOperator.UserRoles.Role").Preload("PickOperator.UserRoles.Assigner").First(&order, order.ID)
 
 	message := "Order complained status updated successfully"
 	if req.Complained {
@@ -157,8 +157,8 @@ func (oc *OrderController) GetOrders(c *gin.Context) {
 
 	// Get orders with pagination, filters, sorted by ID descending
 	if err := query.Order("id DESC").Limit(limit).Offset(offset).
-		Preload("Picker.UserRoles.Role").
-		Preload("Picker.UserRoles.Assigner").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
 		Preload("OrderDetails").
 		Find(&orders).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve orders", err.Error())
@@ -235,8 +235,8 @@ func (oc *OrderController) GetOrder(c *gin.Context) {
 
 	if err := oc.DB.
 		Preload("OrderDetails").
-		Preload("Picker.UserRoles.Role").
-		Preload("Picker.UserRoles.Assigner").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
 		First(&order, orderID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
@@ -335,7 +335,7 @@ func (oc *OrderController) BulkCreateOrders(c *gin.Context) {
 		}
 
 		// Load order with details for response
-		oc.DB.Preload("OrderDetails").Preload("Picker").First(&order, order.ID)
+		oc.DB.Preload("OrderDetails").Preload("PickOperator").First(&order, order.ID)
 		createdOrders = append(createdOrders, order)
 	}
 
