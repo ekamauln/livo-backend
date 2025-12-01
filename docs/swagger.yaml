@@ -1010,6 +1010,18 @@ definitions:
     - name
     - variant
     type: object
+  controllers.UpdateProfileRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      full_name:
+        example: John Doe
+        type: string
+      password:
+        example: newpassword123
+        type: string
+    type: object
   controllers.UpdateSolutionComplainRequest:
     properties:
       solution:
@@ -5305,6 +5317,68 @@ paths:
       summary: Update user status
       tags:
       - user-manager
+  /api/user/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update current user's profile information
+      parameters:
+      - description: Update profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

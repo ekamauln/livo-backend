@@ -5,8 +5,7 @@ import (
 	"livo-backend/config"
 	"livo-backend/controllers"
 	"net/http"
-
-	// "strings"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -16,7 +15,7 @@ import (
 )
 
 // SetupRoutes configures all routes for the application
-func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController, outboundController *controllers.OutboundController, returnController *controllers.ReturnController, mobileReturnController *controllers.MobileReturnController, complainController *controllers.ComplainController, orderController *controllers.OrderController, mobileOrderController *controllers.MobileOrderController) *gin.Engine {
+func SetupRoutes(cfg *config.Config, authController *controllers.AuthController, userManagerController *controllers.UserManagerController, boxController *controllers.BoxController, channelController *controllers.ChannelController, mobileChannelController *controllers.MobileChannelController, expeditionController *controllers.ExpeditionController, productController *controllers.ProductController, storeController *controllers.StoreController, mobileStoreController *controllers.MobileStoreController, qcRibbonController *controllers.QcRibbonController, ribbonFlowController *controllers.RibbonFlowController, qcOnlineController *controllers.QcOnlineController, onlineFlowController *controllers.OnlineFlowController, pickedOrderController *controllers.PickedOrderController, outboundController *controllers.OutboundController, returnController *controllers.ReturnController, mobileReturnController *controllers.MobileReturnController, complainController *controllers.ComplainController, orderController *controllers.OrderController, mobileOrderController *controllers.MobileOrderController, userController *controllers.UserController) *gin.Engine {
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
 
@@ -27,25 +26,25 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization")
 	router.Use(cors.New(corsConfig))
-	// corsConfig = cors.Config{
-	// 	AllowOrigins: strings.Split(cfg.CORSAllowedOrigins, ","),
-	// 	AllowMethods: strings.Split(cfg.CORSAllowedMethods, ","),
-	// 	AllowHeaders: []string{
-	// 		"Origin",
-	// 		"Content-Length",
-	// 		"Content-Type",
-	// 		"Authorization",
-	// 		"Accept",
-	// 		"X-Requested-With",
-	// 	},
-	// 	ExposeHeaders: []string{
-	// 		"Content-Length",
-	// 		"Content-Type",
-	// 	},
-	// 	AllowCredentials: true,
-	// 	MaxAge:           12 * time.Hour,
-	// }
-	// router.Use(cors.New(corsConfig))
+	corsConfig = cors.Config{
+		AllowOrigins: strings.Split(cfg.CORSAllowedOrigins, ","),
+		AllowMethods: strings.Split(cfg.CORSAllowedMethods, ","),
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Length",
+			"Content-Type",
+			"Authorization",
+			"Accept",
+			"X-Requested-With",
+		},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"Content-Type",
+		},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	router.Use(cors.New(corsConfig))
 
 	// Set trusted proxies for security
 	router.SetTrustedProxies([]string{"127.0.0.1", "192.168.31.52", "192.168.31.53", "192.168.31.54", "192.168.31.55", "::1"})
@@ -186,6 +185,7 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	SetupComplainRoutes(api, cfg, complainController)
 	SetupOrderRoutes(api, cfg, orderController)
 	SetupMobileOrderRoutes(api, cfg, mobileOrderController)
+	SetupUserRoutes(api, cfg, userController)
 
 	return router
 }
