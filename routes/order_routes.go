@@ -18,13 +18,10 @@ func SetupOrderRoutes(api *gin.RouterGroup, cfg *config.Config, orderController 
 		order.GET("", orderController.GetOrders)                                  // Get all orders (with optional search and date filtering)
 		order.GET("/:id", orderController.GetOrder)                               // Get specific order by ID (full details)
 		order.POST("/bulk", orderController.BulkCreateOrders)                     // Create multiple orders
-		order.PUT("/:id/complained", orderController.UpdateOrderComplainedStatus) // Update complained status
-
-		// Public order details route
-		order.GET("/:id/details", orderController.GetOrderDetails)                 // Get order details
-		order.POST("/:id/details", orderController.AddOrderDetail)                 // Add new order detail to an order
-		order.PUT("/:id/details/:detail_id", orderController.UpdateOrderDetail)    // Update specific order detail
-		order.DELETE("/:id/details/:detail_id", orderController.RemoveOrderDetail) // Remove specific order detail
+		order.PUT("/:id", orderController.UpdateOrder)                            // Update order details
+		order.POST("/:id/duplicate", orderController.DuplicateOrder)              // Duplicate an order
+		order.PUT("/:id/cancel", orderController.CancelOrder)                     // Cancel an order
+		order.PUT("/:id/complained", orderController.UpdateOrderComplainedStatus) // Update order complained status
 	}
 }
 

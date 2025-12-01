@@ -376,157 +376,392 @@ func (oc *OrderController) BulkCreateOrders(c *gin.Context) {
 	utilities.SuccessResponse(c, statusCode, message, response)
 }
 
-// GetOrderDetails godoc
-// @Summary Get order details
-// @Description Get order ID, tracking and all order details of a specific order by ID.
+// UpdateOrder godoc
+// @Summary Update order and order details
+// @Description Update order information and manage order details (add, update, remove products)
 // @Tags orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Order ID"
-// @Success 200 {object} utilities.Response{data=OrderDetailsOnlyResponse}
+// @Param request body UpdateOrderRequest true "Update order request"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/orders/{id}/details [get]
-func (oc *OrderController) GetOrderDetails(c *gin.Context) {
+// @Router /api/orders/{id} [put]
+func (oc *OrderController) UpdateOrder(c *gin.Context) {
 	orderID := c.Param("id")
-	var order models.Order
 
+	var req UpdateOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utilities.ValidationErrorResponse(c, err)
+		return
+	}
+
+	// Get current user ID from context
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
+		return
+	}
+
+	// Find the order
+	var order models.Order
 	if err := oc.DB.Preload("OrderDetails").First(&order, orderID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
 			return
 		}
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve order", err.Error())
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
 		return
 	}
 
-	// Convert order details to response format
-	orderDetails := make([]OrderDetailResponse, len(order.OrderDetails))
-	for i, detail := range order.OrderDetails {
-		orderDetails[i] = OrderDetailResponse{
-			ID:          detail.ID,
+	// Check if order status allows modification
+	if order.ProcessingStatus == "picking process" || order.ProcessingStatus == "qc process" {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order when processing status is '%s'.", order.ProcessingStatus))
+		return
+	}
+
+	// Check if order is cancelled
+	if order.EventStatus != nil && *order.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "this order has already been cancelled")
+		return
+	}
+
+	// Update basic order fields
+	eventStatus := "changed"
+	order.EventStatus = &eventStatus
+	order.Channel = req.Channel
+	order.Store = req.Store
+	order.Buyer = req.Buyer
+	order.Address = req.Address
+	order.Courier = req.Courier
+	order.Tracking = req.Tracking
+
+	if req.SentBefore != "" {
+		if parsedTime, err := time.Parse("2006-01-02 15:04:05", req.SentBefore); err == nil {
+			order.SentBefore = parsedTime
+		}
+	}
+
+	// Set changed_by and changed_at
+	now := time.Now()
+	order.ChangedBy = &userID
+	order.ChangedAt = &now
+
+	// Begin transaction
+	tx := oc.DB.Begin()
+
+	// Save order changes
+	if err := tx.Save(&order).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order", err.Error())
+		return
+	}
+
+	// Process order details updates
+	// Create a map of existing order details by ID for quick lookup
+	existingDetailsMap := make(map[uint]models.OrderDetail)
+	for _, detail := range order.OrderDetails {
+		existingDetailsMap[detail.ID] = detail
+	}
+
+	// Track which existing details are still in the update
+	updatedDetailIDs := make(map[uint]bool)
+
+	// Process each detail in the request
+	for _, detailReq := range req.OrderDetails {
+		if detailReq.ID == 0 {
+			// New product - create new order detail
+			newDetail := models.OrderDetail{
+				OrderID:     order.ID,
+				Sku:         detailReq.Sku,
+				ProductName: detailReq.ProductName,
+				Variant:     detailReq.Variant,
+				Quantity:    detailReq.Quantity,
+			}
+			if err := tx.Create(&newDetail).Error; err != nil {
+				tx.Rollback()
+				utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to add new order detail", err.Error())
+				return
+			}
+		} else {
+			// Update existing product
+			if existingDetail, exists := existingDetailsMap[detailReq.ID]; exists {
+				existingDetail.Sku = detailReq.Sku
+				existingDetail.ProductName = detailReq.ProductName
+				existingDetail.Variant = detailReq.Variant
+				existingDetail.Quantity = detailReq.Quantity
+
+				if err := tx.Save(&existingDetail).Error; err != nil {
+					tx.Rollback()
+					utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order detail", err.Error())
+					return
+				}
+				updatedDetailIDs[detailReq.ID] = true
+			} else {
+				tx.Rollback()
+				utilities.ErrorResponse(c, http.StatusNotFound, "Order detail not found", fmt.Sprintf("order detail with ID %d not found for this order", detailReq.ID))
+				return
+			}
+		}
+	}
+
+	// Remove products that are not in the update request
+	for detailID := range existingDetailsMap {
+		if !updatedDetailIDs[detailID] {
+			// This detail was not in the update request, so delete it
+			if err := tx.Delete(&models.OrderDetail{}, detailID).Error; err != nil {
+				tx.Rollback()
+				utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to remove order detail", err.Error())
+				return
+			}
+		}
+	}
+
+	// Verify at least one order detail remains
+	var detailCount int64
+	if err := tx.Model(&models.OrderDetail{}).Where("order_id = ?", order.ID).Count(&detailCount).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count order details", err.Error())
+		return
+	}
+
+	if detailCount == 0 {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid update", "order must have at least one order detail")
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to commit transaction", err.Error())
+		return
+	}
+
+	// Reload order with all relationships
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("ChangeOperator").
+		First(&order, order.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload order", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
+		}
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Order updated successfully", order.ToOrderResponse())
+}
+
+// DuplicateOrder godoc
+// @Summary Duplicate an order
+// @Description Duplicate an existing order with all its details. The new order will have "X-" prefix added to tracking and the original order will have "-X2" suffix added to order_ginee_id
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID to duplicate"
+// @Success 201 {object} utilities.Response{data=DuplicateOrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
+// @Router /api/orders/{id}/duplicate [post]
+func (oc *OrderController) DuplicateOrder(c *gin.Context) {
+	orderID := c.Param("id")
+
+	// Get current user ID from context
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
+		return
+	}
+
+	// Find the original order
+	var originalOrder models.Order
+	if err := oc.DB.Preload("OrderDetails").First(&originalOrder, orderID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
+		return
+	}
+
+	// Check if order status allows modification
+	if originalOrder.ProcessingStatus == "picking process" || originalOrder.ProcessingStatus == "qc process" {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order when processing status is '%s'.", originalOrder.ProcessingStatus))
+		return
+	}
+
+	// Check if order is cancelled
+	if originalOrder.EventStatus != nil && *originalOrder.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "this order has already been cancelled")
+		return
+	}
+
+	// Begin transaction
+	tx := oc.DB.Begin()
+
+	// Store the original tracking before modification
+	originalTracking := originalOrder.Tracking
+
+	// Update original order's order_ginee_id by adding "-X2" suffix and tracking with "X-" prefix
+	// eventStatus := "duplicated"
+	// originalOrder.EventStatus = &eventStatus
+	originalOrder.OrderGineeID = originalOrder.OrderGineeID + "-X2"
+	originalOrder.Tracking = "X-" + originalOrder.Tracking
+	if err := tx.Save(&originalOrder).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update original order", err.Error())
+		return
+	}
+
+	// Create new duplicated order
+	now := time.Now()
+	duplicatedEventStatus := "duplicated"
+	duplicatedOrder := models.Order{
+		OrderGineeID:     originalOrder.OrderGineeID[:len(originalOrder.OrderGineeID)-3], // Remove the "-X2" suffix for the new order
+		ProcessingStatus: originalOrder.ProcessingStatus,
+		EventStatus:      &duplicatedEventStatus,
+		Channel:          originalOrder.Channel,
+		Store:            originalOrder.Store,
+		Buyer:            originalOrder.Buyer,
+		Address:          originalOrder.Address,
+		Courier:          originalOrder.Courier,
+		Tracking:         originalTracking, // Use original tracking without "X-" prefix
+		SentBefore:       originalOrder.SentBefore,
+		Complained:       false,
+		ChangedBy:        &userID,
+		ChangedAt:        &now,
+	}
+
+	// Create the duplicated order
+	if err := tx.Create(&duplicatedOrder).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to create duplicated order", err.Error())
+		return
+	}
+
+	// Duplicate order details
+	for _, detail := range originalOrder.OrderDetails {
+		duplicatedDetail := models.OrderDetail{
+			OrderID:     duplicatedOrder.ID,
 			Sku:         detail.Sku,
 			ProductName: detail.ProductName,
 			Variant:     detail.Variant,
 			Quantity:    detail.Quantity,
 		}
+		if err := tx.Create(&duplicatedDetail).Error; err != nil {
+			tx.Rollback()
+			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to duplicate order details", err.Error())
+			return
+		}
 	}
 
-	// Create custom response with only order_ginee_id, tracking, and order details
-	response := OrderDetailsOnlyResponse{
-		OrderGineeID: order.OrderGineeID,
-		Tracking:     order.Tracking,
-		OrderDetails: orderDetails,
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to commit transaction", err.Error())
+		return
 	}
 
-	utilities.SuccessResponse(c, http.StatusOK, "Order details retrieved successfully", response)
+	// Reload both orders with all relationships
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("ChangeOperator").
+		First(&originalOrder, originalOrder.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload original order", err.Error())
+		return
+	}
+
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("ChangeOperator").
+		First(&duplicatedOrder, duplicatedOrder.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload duplicated order", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details for both orders
+	for i := range originalOrder.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", originalOrder.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			originalOrder.OrderDetails[i].Product = &product
+		}
+	}
+
+	for i := range duplicatedOrder.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", duplicatedOrder.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			duplicatedOrder.OrderDetails[i].Product = &product
+		}
+	}
+
+	response := DuplicateOrderResponse{
+		OriginalOrder:   originalOrder.ToOrderResponse(),
+		DuplicatedOrder: duplicatedOrder.ToOrderResponse(),
+	}
+
+	utilities.SuccessResponse(c, http.StatusCreated, "Order duplicated successfully", response)
 }
 
-// Add these new endpoints after the GetOrderDetails function
-
-// UpdateOrderDetail godoc
-// @Summary Update order detail
-// @Description Update a specific order detail by ID.
+// CancelOrder godoc
+// @Summary Cancel an order
+// @Description Cancel an order by setting event_status to "cancelled" and recording who cancelled it and when
 // @Tags orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path int true "Order ID"
-// @Param detail_id path int true "Order Detail ID"
-// @Param request body UpdateOrderDetailRequest true "Update order detail request"
-// @Success 200 {object} utilities.Response{data=OrderDetailResponse}
+// @Param id path int true "Order ID to cancel"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/orders/{id}/details/{detail_id} [put]
-func (oc *OrderController) UpdateOrderDetail(c *gin.Context) {
-	orderID := c.Param("id")
-	detailID := c.Param("detail_id")
-
-	var req UpdateOrderDetailRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utilities.ValidationErrorResponse(c, err)
-		return
-	}
-
-	// Verify order exists
-	var order models.Order
-	if err := oc.DB.First(&order, orderID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
-			return
-		}
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
-		return
-	}
-
-	// Check if order status allows modification
-	if order.ProcessingStatus == "picking process" || order.ProcessingStatus != "qc process" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
-		return
-	}
-
-	// Find and update the order detail
-	var orderDetail models.OrderDetail
-	if err := oc.DB.Where("id = ? AND order_id = ?", detailID, orderID).First(&orderDetail).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order detail not found", "no order detail found with the specified ID for this order")
-			return
-		}
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order detail", err.Error())
-		return
-	}
-
-	// Update fields
-	orderDetail.Sku = req.Sku
-	orderDetail.ProductName = req.ProductName
-	orderDetail.Variant = req.Variant
-	orderDetail.Quantity = req.Quantity
-
-	if err := oc.DB.Save(&orderDetail).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order detail", err.Error())
-		return
-	}
-
-	response := OrderDetailResponse{
-		ID:          orderDetail.ID,
-		Sku:         orderDetail.Sku,
-		ProductName: orderDetail.ProductName,
-		Variant:     orderDetail.Variant,
-		Quantity:    orderDetail.Quantity,
-	}
-
-	utilities.SuccessResponse(c, http.StatusOK, "Order detail updated successfully", response)
-}
-
-// AddOrderDetail godoc
-// @Summary Add new order detail
-// @Description Add a new order detail to an existing order.
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "Order ID"
-// @Param request body CreateOrderDetailRequest true "Add order detail request"
-// @Success 201 {object} utilities.Response{data=OrderDetailResponse}
-// @Failure 400 {object} utilities.Response
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Failure 404 {object} utilities.Response
-// @Router /api/orders/{id}/details [post]
-func (oc *OrderController) AddOrderDetail(c *gin.Context) {
+// @Router /api/orders/{id}/cancel [put]
+func (oc *OrderController) CancelOrder(c *gin.Context) {
 	orderID := c.Param("id")
 
-	var req CreateOrderDetailRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utilities.ValidationErrorResponse(c, err)
+	// Get current user ID from context
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
 		return
 	}
 
-	// Verify order exists
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
+		return
+	}
+
+	// Find the order
 	var order models.Order
 	if err := oc.DB.First(&order, orderID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -539,111 +774,48 @@ func (oc *OrderController) AddOrderDetail(c *gin.Context) {
 
 	// Check if order status allows modification
 	if order.ProcessingStatus == "picking process" || order.ProcessingStatus == "qc process" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot add order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
+		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot modify order when processing status is '%s'.", order.ProcessingStatus))
 		return
 	}
 
-	// Convert string ID to uint
-	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
-	if err != nil {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid order ID", "order ID must be a valid number")
+	// Check if order is already cancelled
+	if order.EventStatus != nil && *order.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "this order has already been cancelled")
 		return
 	}
 
-	// Create new order detail
-	orderDetail := models.OrderDetail{
-		OrderID:     uint(orderIDUint),
-		Sku:         req.Sku,
-		ProductName: req.ProductName,
-		Variant:     req.Variant,
-		Quantity:    req.Quantity,
-	}
+	// Update order with cancellation details
+	eventStatus := "cancelled"
+	now := time.Now()
+	order.EventStatus = &eventStatus
+	order.CancelledBy = &userID
+	order.CancelledAt = &now
 
-	if err := oc.DB.Create(&orderDetail).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to add order detail", err.Error())
+	if err := oc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to cancel order", err.Error())
 		return
 	}
 
-	response := OrderDetailResponse{
-		ID:          orderDetail.ID,
-		Sku:         orderDetail.Sku,
-		ProductName: orderDetail.ProductName,
-		Variant:     orderDetail.Variant,
-		Quantity:    orderDetail.Quantity,
+	// Reload order with all relationships
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("CancelOperator").
+		First(&order, order.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload order", err.Error())
+		return
 	}
 
-	utilities.SuccessResponse(c, http.StatusCreated, "Order detail added successfully", response)
-}
-
-// RemoveOrderDetail godoc
-// @Summary Remove order detail
-// @Description Remove a specific order detail from an order.
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "Order ID"
-// @Param detail_id path int true "Order Detail ID"
-// @Success 200 {object} utilities.Response
-// @Failure 400 {object} utilities.Response
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Failure 404 {object} utilities.Response
-// @Router /api/orders/{id}/details/{detail_id} [delete]
-func (oc *OrderController) RemoveOrderDetail(c *gin.Context) {
-	orderID := c.Param("id")
-	detailID := c.Param("detail_id")
-
-	// Verify order exists
-	var order models.Order
-	if err := oc.DB.First(&order, orderID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
-			return
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
 		}
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
-		return
 	}
 
-	// Check if order status allows modification
-	if order.ProcessingStatus == "picking process" || order.ProcessingStatus == "qc process" {
-		utilities.ErrorResponse(c, http.StatusForbidden, "Order modification not allowed", fmt.Sprintf("cannot remove order details when status is '%s'. Order must be in 'ready to pick' status", order.ProcessingStatus))
-		return
-	}
-
-	// Check if this is the last order detail
-	var detailCount int64
-	oc.DB.Model(&models.OrderDetail{}).Where("order_id = ?", orderID).Count(&detailCount)
-	if detailCount <= 1 {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Cannot remove order detail", "order must have at least one order detail")
-		return
-	}
-
-	// Find and delete the order detail
-	var orderDetail models.OrderDetail
-	if err := oc.DB.Where("id = ? AND order_id = ?", detailID, orderID).First(&orderDetail).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order detail not found", "no order detail found with the specified ID for this order")
-			return
-		}
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order detail", err.Error())
-		return
-	}
-
-	if err := oc.DB.Delete(&orderDetail).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to remove order detail", err.Error())
-		return
-	}
-
-	utilities.SuccessResponse(c, http.StatusOK, "Order detail removed successfully", nil)
-}
-
-// Add this struct after the existing structs
-type UpdateOrderDetailRequest struct {
-	Sku         string `json:"sku" binding:"required" example:"PROD001"`
-	ProductName string `json:"product_name" binding:"required" example:"Updated Product"`
-	Variant     string `json:"variant" example:"Blue - Size L"`
-	Quantity    int    `json:"quantity" binding:"required,min=1" example:"3"`
+	utilities.SuccessResponse(c, http.StatusOK, "Order cancelled successfully", order.ToOrderResponse())
 }
 
 type OrdersListResponse struct {
@@ -701,17 +873,27 @@ type FailedOrder struct {
 	Error        string `json:"error"`
 }
 
-type OrderDetailResponse struct {
-	ID          uint   `json:"id"`
-	Sku         string `json:"sku"`
-	ProductName string `json:"product_name"`
-	Variant     string `json:"variant"`
-	Quantity    int    `json:"quantity"`
+type UpdateOrderRequest struct {
+	EventStatus  string                     `json:"event_status" example:"data changed"`
+	Channel      string                     `json:"channel" binding:"required" example:"Shopee"`
+	Store        string                     `json:"store" binding:"required" example:"SP deParcelRibbon"`
+	Buyer        string                     `json:"buyer" binding:"required" example:"John Doe"`
+	Address      string                     `json:"address" binding:"required" example:"123 Main St, City, Country"`
+	Courier      string                     `json:"courier" binding:"required" example:"JNE"`
+	Tracking     string                     `json:"tracking" binding:"required" example:"JNE1234567890"`
+	SentBefore   string                     `json:"sent_before" example:"2023-01-01 12:00:00"`
+	OrderDetails []UpdateOrderDetailRequest `json:"order_details" binding:"required,min=1"`
 }
 
-type OrderDetailsOnlyResponse struct {
-	OrderGineeID string                `json:"order_ginee_id"`
-	Tracking     string                `json:"tracking"`
-	SentBefore   time.Time             `json:"sent_before"`
-	OrderDetails []OrderDetailResponse `json:"order_details"`
+type UpdateOrderDetailRequest struct {
+	ID          uint   `json:"id" example:"1"` // 0 for new product, existing ID for update
+	Sku         string `json:"sku" binding:"required" example:"PROD001"`
+	ProductName string `json:"product_name" binding:"required" example:"Sample Product"`
+	Variant     string `json:"variant" example:"Red - Size M"`
+	Quantity    int    `json:"quantity" binding:"required,min=1" example:"2"`
+}
+
+type DuplicateOrderResponse struct {
+	OriginalOrder   models.OrderResponse `json:"original_order"`
+	DuplicatedOrder models.OrderResponse `json:"duplicated_order"`
 }

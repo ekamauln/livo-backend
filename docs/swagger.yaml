@@ -323,6 +323,13 @@ definitions:
     - password
     - username
     type: object
+  controllers.DuplicateOrderResponse:
+    properties:
+      duplicated_order:
+        $ref: '#/definitions/models.OrderResponse'
+      original_order:
+        $ref: '#/definitions/models.OrderResponse'
+    type: object
   controllers.ExpeditionsListResponse:
     properties:
       expeditions:
@@ -569,32 +576,6 @@ definitions:
         type: string
       operator:
         $ref: '#/definitions/controllers.OnlineOperatorFlowInfo'
-    type: object
-  controllers.OrderDetailResponse:
-    properties:
-      id:
-        type: integer
-      product_name:
-        type: string
-      quantity:
-        type: integer
-      sku:
-        type: string
-      variant:
-        type: string
-    type: object
-  controllers.OrderDetailsOnlyResponse:
-    properties:
-      order_details:
-        items:
-          $ref: '#/definitions/controllers.OrderDetailResponse'
-        type: array
-      order_ginee_id:
-        type: string
-      sent_before:
-        type: string
-      tracking:
-        type: string
     type: object
   controllers.OrdersListResponse:
     properties:
@@ -962,23 +943,67 @@ definitions:
     type: object
   controllers.UpdateOrderDetailRequest:
     properties:
+      id:
+        description: 0 for new product, existing ID for update
+        example: 1
+        type: integer
       product_name:
-        example: Updated Product
+        example: Sample Product
         type: string
       quantity:
-        example: 3
+        example: 2
         minimum: 1
         type: integer
       sku:
         example: PROD001
         type: string
       variant:
-        example: Blue - Size L
+        example: Red - Size M
         type: string
     required:
     - product_name
     - quantity
     - sku
+    type: object
+  controllers.UpdateOrderRequest:
+    properties:
+      address:
+        example: 123 Main St, City, Country
+        type: string
+      buyer:
+        example: John Doe
+        type: string
+      channel:
+        example: Shopee
+        type: string
+      courier:
+        example: JNE
+        type: string
+      event_status:
+        example: data changed
+        type: string
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.UpdateOrderDetailRequest'
+        minItems: 1
+        type: array
+      sent_before:
+        example: "2023-01-01 12:00:00"
+        type: string
+      store:
+        example: SP deParcelRibbon
+        type: string
+      tracking:
+        example: JNE1234567890
+        type: string
+    required:
+    - address
+    - buyer
+    - channel
+    - courier
+    - order_details
+    - store
+    - tracking
     type: object
   controllers.UpdateOutboundRequest:
     properties:
@@ -3357,6 +3382,101 @@ paths:
       summary: Get order by ID
       tags:
       - orders
+    put:
+      consumes:
+      - application/json
+      description: Update order information and manage order details (add, update,
+        remove products)
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update order request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update order and order details
+      tags:
+      - orders
+  /api/orders/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: Cancel an order by setting event_status to "cancelled" and recording
+        who cancelled it and when
+      parameters:
+      - description: Order ID to cancel
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Cancel an order
+      tags:
+      - orders
   /api/orders/{id}/complained:
     put:
       consumes:
@@ -3407,63 +3527,19 @@ paths:
       summary: Update order complained status
       tags:
       - orders
-  /api/orders/{id}/details:
-    get:
-      consumes:
-      - application/json
-      description: Get order ID, tracking and all order details of a specific order
-        by ID.
-      parameters:
-      - description: Order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/controllers.OrderDetailsOnlyResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get order details
-      tags:
-      - orders
+  /api/orders/{id}/duplicate:
     post:
       consumes:
       - application/json
-      description: Add a new order detail to an existing order.
+      description: Duplicate an existing order with all its details. The new order
+        will have "X-" prefix added to tracking and the original order will have "-X2"
+        suffix added to order_ginee_id
       parameters:
-      - description: Order ID
+      - description: Order ID to duplicate
         in: path
         name: id
         required: true
         type: integer
-      - description: Add order detail request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.CreateOrderDetailRequest'
       produces:
       - application/json
       responses:
@@ -3474,7 +3550,7 @@ paths:
             - $ref: '#/definitions/utilities.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/controllers.OrderDetailResponse'
+                  $ref: '#/definitions/controllers.DuplicateOrderResponse'
               type: object
         "400":
           description: Bad Request
@@ -3494,105 +3570,7 @@ paths:
             $ref: '#/definitions/utilities.Response'
       security:
       - BearerAuth: []
-      summary: Add new order detail
-      tags:
-      - orders
-  /api/orders/{id}/details/{detail_id}:
-    delete:
-      consumes:
-      - application/json
-      description: Remove a specific order detail from an order.
-      parameters:
-      - description: Order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Order Detail ID
-        in: path
-        name: detail_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Remove order detail
-      tags:
-      - orders
-    put:
-      consumes:
-      - application/json
-      description: Update a specific order detail by ID.
-      parameters:
-      - description: Order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Order Detail ID
-        in: path
-        name: detail_id
-        required: true
-        type: integer
-      - description: Update order detail request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.UpdateOrderDetailRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/controllers.OrderDetailResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Update order detail
+      summary: Duplicate an order
       tags:
       - orders
   /api/orders/bulk:

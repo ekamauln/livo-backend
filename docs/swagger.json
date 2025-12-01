@@ -2953,6 +2953,159 @@
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update order information and manage order details (add, update, remove products)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Update order and order details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update order request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.OrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/{id}/cancel": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancel an order by setting event_status to \"cancelled\" and recording who cancelled it and when",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Cancel an order",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID to cancel",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.OrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
             }
         },
         "/api/orders/{id}/complained": {
@@ -3037,79 +3190,14 @@
                 }
             }
         },
-        "/api/orders/{id}/details": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get order ID, tracking and all order details of a specific order by ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "orders"
-                ],
-                "summary": "Get order details",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Order ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utilities.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/controllers.OrderDetailsOnlyResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            },
+        "/api/orders/{id}/duplicate": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Add a new order detail to an existing order.",
+                "description": "Duplicate an existing order with all its details. The new order will have \"X-\" prefix added to tracking and the original order will have \"-X2\" suffix added to order_ginee_id",
                 "consumes": [
                     "application/json"
                 ],
@@ -3119,23 +3207,14 @@
                 "tags": [
                     "orders"
                 ],
-                "summary": "Add new order detail",
+                "summary": "Duplicate an order",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Order ID",
+                        "description": "Order ID to duplicate",
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "description": "Add order detail request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.CreateOrderDetailRequest"
-                        }
                     }
                 ],
                 "responses": {
@@ -3150,166 +3229,11 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/controllers.OrderDetailResponse"
+                                            "$ref": "#/definitions/controllers.DuplicateOrderResponse"
                                         }
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/orders/{id}/details/{detail_id}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update a specific order detail by ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "orders"
-                ],
-                "summary": "Update order detail",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Order ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Order Detail ID",
-                        "name": "detail_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update order detail request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.UpdateOrderDetailRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utilities.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/controllers.OrderDetailResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Remove a specific order detail from an order.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "orders"
-                ],
-                "summary": "Remove order detail",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Order ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Order Detail ID",
-                        "name": "detail_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
                         }
                     },
                     "400": {
@@ -6674,6 +6598,17 @@
                 }
             }
         },
+        "controllers.DuplicateOrderResponse": {
+            "type": "object",
+            "properties": {
+                "duplicated_order": {
+                    "$ref": "#/definitions/models.OrderResponse"
+                },
+                "original_order": {
+                    "$ref": "#/definitions/models.OrderResponse"
+                }
+            }
+        },
         "controllers.ExpeditionsListResponse": {
             "type": "object",
             "properties": {
@@ -7050,46 +6985,6 @@
                 },
                 "operator": {
                     "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
-                }
-            }
-        },
-        "controllers.OrderDetailResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "product_name": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "variant": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.OrderDetailsOnlyResponse": {
-            "type": "object",
-            "properties": {
-                "order_details": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/controllers.OrderDetailResponse"
-                    }
-                },
-                "order_ginee_id": {
-                    "type": "string"
-                },
-                "sent_before": {
-                    "type": "string"
-                },
-                "tracking": {
-                    "type": "string"
                 }
             }
         },
@@ -7643,14 +7538,19 @@
                 "sku"
             ],
             "properties": {
+                "id": {
+                    "description": "0 for new product, existing ID for update",
+                    "type": "integer",
+                    "example": 1
+                },
                 "product_name": {
                     "type": "string",
-                    "example": "Updated Product"
+                    "example": "Sample Product"
                 },
                 "quantity": {
                     "type": "integer",
                     "minimum": 1,
-                    "example": 3
+                    "example": 2
                 },
                 "sku": {
                     "type": "string",
@@ -7658,7 +7558,60 @@
                 },
                 "variant": {
                     "type": "string",
-                    "example": "Blue - Size L"
+                    "example": "Red - Size M"
+                }
+            }
+        },
+        "controllers.UpdateOrderRequest": {
+            "type": "object",
+            "required": [
+                "address",
+                "buyer",
+                "channel",
+                "courier",
+                "order_details",
+                "store",
+                "tracking"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "123 Main St, City, Country"
+                },
+                "buyer": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "channel": {
+                    "type": "string",
+                    "example": "Shopee"
+                },
+                "courier": {
+                    "type": "string",
+                    "example": "JNE"
+                },
+                "event_status": {
+                    "type": "string",
+                    "example": "data changed"
+                },
+                "order_details": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/controllers.UpdateOrderDetailRequest"
+                    }
+                },
+                "sent_before": {
+                    "type": "string",
+                    "example": "2023-01-01 12:00:00"
+                },
+                "store": {
+                    "type": "string",
+                    "example": "SP deParcelRibbon"
+                },
+                "tracking": {
+                    "type": "string",
+                    "example": "JNE1234567890"
                 }
             }
         },
