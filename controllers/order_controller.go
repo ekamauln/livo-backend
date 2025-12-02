@@ -1024,6 +1024,79 @@ func (oc *OrderController) PendingPickOrders(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, "Order set to pending pick successfully", order.ToOrderResponse())
 }
 
+// GetAssignedOrders godoc
+// @Summary Get orders assigned to all pickers
+// @Description Retrieve all orders currently assigned to all pickers that are in "picking process" status. and filter by current date.
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utilities.Response{data=[]models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Router /api/orders/assigned [get]
+func (oc *OrderController) GetAssignedOrders(c *gin.Context) {
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	// Parse search parameter (optional)
+	search := c.Query("search")
+
+	var orders []models.Order
+	var total int64
+
+	// Build query with necessary preloads and filters
+	query := oc.DB.Model(&models.Order{}).
+		Where("processing_status = ?", "picking process").
+		Where("DATE(assigned_at) = ?", time.Now().Format("2006-01-02")) // Filter by current date
+
+	if search != "" {
+		// Search by Order Ginee ID or Tracking number
+		query = query.Where("order_ginee_id LIKE ? OR tracking LIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+
+	// Get total count with filters
+	if err := query.Count(&total).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count orders", err.Error())
+		return
+	}
+
+	// Get assigned orders with pagination
+	if err := query.Order("assigned_at DESC").
+		Preload("OrderDetails").
+		Preload("PickOperator").
+		Preload("AssignOperator").
+		Preload("ChangeOperator").
+		Preload("PendingOperator").
+		Preload("CancelOperator").
+		Limit(limit).Offset(offset).Find(&orders).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve orders", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details
+	for i := range orders {
+		for j := range orders[i].OrderDetails {
+			var product models.Product
+			if err := oc.DB.Where("sku = ?", orders[i].OrderDetails[j].Sku).First(&product).Error; err == nil {
+				orders[i].OrderDetails[j].Product = &product
+			}
+		}
+	}
+
+	// Convert orders to response format
+	orderResponses := make([]models.OrderResponse, len(orders))
+	for i, order := range orders {
+		orderResponses[i] = order.ToOrderResponse()
+	}
+
+	// Return success response
+	utilities.SuccessResponse(c, http.StatusOK, "Assigned orders retrieved successfully", orderResponses)
+}
+
 // Request and Response Structs
 type OrdersListResponse struct {
 	Orders     []models.OrderResponse       `json:"orders"`

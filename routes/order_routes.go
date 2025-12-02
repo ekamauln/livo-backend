@@ -30,9 +30,13 @@ func SetupOrderRoutes(api *gin.RouterGroup, cfg *config.Config, orderController 
 	}
 
 	// Order management routes (coordinator only)
-	order.Use(middleware.RequireCoordinatorRoles())
+	orderCoordinator := api.Group("/orders")
+	orderCoordinator.Use(middleware.AuthMiddleware(cfg))
+	orderCoordinator.Use(middleware.RequireCoordinatorRoles())
 	{
-		order.PUT("/:id/assign-picker", orderController.AssignPicker) // Assign picker to order
+		orderCoordinator.PUT("/:id/pending-pick", orderController.PendingPickOrders) // Pending an picked orders
+		orderCoordinator.GET("/assigned", orderController.GetAssignedOrders)         // Get all assigned orders for current date
+		orderCoordinator.PUT("/:id/assign-picker", orderController.AssignPicker)     // Assign picker to order
 	}
 }
 
@@ -43,11 +47,8 @@ func SetupMobileOrderRoutes(api *gin.RouterGroup, cfg *config.Config, mobileOrde
 	mobileOrder.Use(middleware.AuthMiddleware(cfg))
 	{
 		// Mobile order routes
-		mobileOrder.GET("", mobileOrderController.GetMobileOrders)                  // Get all orders for pickers with search capability
-		mobileOrder.GET(":id", mobileOrderController.GetMobileOrder)                // Get specific order by ID
-		mobileOrder.GET(":id/pick", mobileOrderController.PickingOrder)             // Pick order
-		mobileOrder.GET("/my-picking", mobileOrderController.GetMyPickingOrders)    // Get my ongoing picking orders
-		mobileOrder.GET(":id/complete", mobileOrderController.CompletePickingOrder) // Complete order
-		mobileOrder.PUT(":id/pending", mobileOrderController.PendingPickOrders)     // Pending picking order
+		mobileOrder.GET("", mobileOrderController.GetMyPickingOrders)                // Get my ongoing picking orders
+		mobileOrder.PUT(":id/pending-pick", mobileOrderController.PendingPickOrders) // Pending picking order
+		mobileOrder.GET(":id/complete", mobileOrderController.CompletePickingOrder)  // Complete order
 	}
 }

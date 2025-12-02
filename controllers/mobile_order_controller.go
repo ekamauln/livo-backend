@@ -6,7 +6,6 @@ import (
 	"livo-backend/utilities"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,135 +21,6 @@ func NewMobileOrderController(db *gorm.DB) *MobileOrderController {
 	return &MobileOrderController{DB: db}
 }
 
-// GetMobileOrders godoc
-// @Summary Get all orders by mobile
-// @Description Get list of all orders with "ready to pick" processing status, Optional search by order ID or tracking number.
-// @Tags mobile-orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(10)
-// @Param search query string false "Search by order Ginee ID or tracking number"
-// @Success 200 {object} utilities.Response{data=MobileOrdersListResponse}
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Router /api/mobile/orders [get]
-func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
-	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset := (page - 1) * limit
-
-	// Parse search parameter
-	search := strings.TrimSpace(c.Query("search"))
-
-	var orders []models.Order
-	var total int64
-
-	// Build base query for "ready to pick" orders
-	query := moc.DB.Model(&models.Order{}).Where("processing_status IN = ?", []string{"ready to pick", "pending picking"})
-
-	// Add search conditions if search parameter is provided
-	if search != "" {
-		searchCondition := "order_ginee_id ILIKE ? OR tracking ILIKE ?"
-		searchPattern := "%" + search + "%"
-		query = query.Where(searchCondition, searchPattern, searchPattern)
-	}
-
-	// Get total count
-	if err := query.Count(&total).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count orders", err.Error())
-		return
-	}
-
-	// Get orders with pagination, sorted by ID ascending
-	if err := query.Order("id ASC").
-		Limit(limit).Offset(offset).
-		Preload("OrderDetails").
-		Find(&orders).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve orders", err.Error())
-		return
-	}
-
-	// Convert to response format with product location and barcode
-	orderResponses := make([]MobileOrderListResponse, len(orders))
-	for i, order := range orders {
-		// Get product details for each order detail
-		var orderDetailsWithProduct []MobileOrderDetailWithProduct
-		for _, detail := range order.OrderDetails {
-			var product models.Product
-
-			// Find product by SKU
-			if err := moc.DB.Where("sku = ?", detail.Sku).First(&product).Error; err != nil {
-				// If product not found, use placeholder values
-				orderDetailsWithProduct = append(orderDetailsWithProduct, MobileOrderDetailWithProduct{
-					OrderDetailResponse: models.OrderDetailResponse{
-						ID:          detail.ID,
-						Sku:         detail.Sku,
-						ProductName: detail.ProductName,
-						Variant:     detail.Variant,
-						Quantity:    detail.Quantity,
-					},
-					Image:    "Image not found",
-					Location: "Location not found",
-					Barcode:  "Barcode not found",
-				})
-			} else {
-				// Product found, include location and barcode
-				orderDetailsWithProduct = append(orderDetailsWithProduct, MobileOrderDetailWithProduct{
-					OrderDetailResponse: models.OrderDetailResponse{
-						ID:          detail.ID,
-						Sku:         detail.Sku,
-						ProductName: detail.ProductName,
-						Variant:     detail.Variant,
-						Quantity:    detail.Quantity,
-					},
-					Image:    product.Image,
-					Location: product.Location,
-					Barcode:  product.Barcode,
-				})
-			}
-		}
-
-		orderResponses[i] = MobileOrderListResponse{
-			ID:               order.ID,
-			OrderGineeID:     order.OrderGineeID,
-			ProcessingStatus: order.ProcessingStatus,
-			EventStatus:      order.EventStatus,
-			Channel:          order.Channel,
-			Store:            order.Store,
-			Buyer:            order.Buyer,
-			Address:          order.Address,
-			Courier:          order.Courier,
-			Tracking:         order.Tracking,
-			SentBefore:       order.SentBefore.Format("2006-01-02 15:04:05"),
-			PickedBy:         order.PickOperator.FullName,
-			PickedAt:         order.PickedAt.Format("2006-01-02 15:04:05"),
-			PendingBy:        order.PendingOperator.FullName,
-			PendingAt:        order.PendingAt.Format("2006-01-02 15:04:05"),
-			ChangedBy:        order.ChangeOperator.FullName,
-			ChangedAt:        order.ChangedAt.Format("2006-01-02 15:04:05"),
-			CancelledBy:      order.CancelOperator.FullName,
-			CancelledAt:      order.CancelledAt.Format("2006-01-02 15:04:05"),
-			CreatedAt:        order.CreatedAt,
-			UpdatedAt:        order.UpdatedAt,
-			OrderDetails:     orderDetailsWithProduct,
-		}
-	}
-
-	response := MobileOrdersListResponse{
-		Orders: orderResponses,
-		Pagination: utilities.PaginationResponse{
-			Page:  page,
-			Limit: limit,
-			Total: int(total),
-		},
-	}
-
-	utilities.SuccessResponse(c, http.StatusOK, "Orders retrieved successfully", response)
-}
-
 // GetMyPickingOrders godoc
 // @Summary Get my ongoing picking orders by mobile
 // @Description Get list of orders currently being picked by the logged-in user (processing status: "picking process")
@@ -161,7 +31,7 @@ func (moc *MobileOrderController) GetMobileOrders(c *gin.Context) {
 // @Success 200 {object} utilities.Response{data=[]models.OrderResponse}
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
-// @Router /api/mobile/orders/my-picking [get]
+// @Router /api/mobile/orders [get]
 func (moc *MobileOrderController) GetMyPickingOrders(c *gin.Context) {
 	// Get current user ID from context
 	userIDInterface, exists := c.Get("user_id")
@@ -179,13 +49,49 @@ func (moc *MobileOrderController) GetMyPickingOrders(c *gin.Context) {
 	var orders []models.Order
 
 	// Get orders currently being picked by this user
-	if err := moc.DB.Where("picker_id = ? AND status = ?", userID, "picking process").
+	if err := moc.DB.Where("picked_by = ? AND processing_status = ?", userID, "picking process").
 		Order("id ASC").
 		Preload("OrderDetails").
-		Preload("Picker").
+		Preload("PickOperator").
+		Preload("AssignOperator").
+		Preload("PendingOperator").
+		Preload("ChangeOperator").
+		Preload("CancelOperator").
 		Find(&orders).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve picking orders", err.Error())
 		return
+	}
+
+	// Manually fetch and attach products to order details, then sort by location
+	for i := range orders {
+		// First, attach products to order details
+		for j := range orders[i].OrderDetails {
+			var product models.Product
+			if err := moc.DB.Where("sku = ?", orders[i].OrderDetails[j].Sku).First(&product).Error; err == nil {
+				orders[i].OrderDetails[j].Product = &product
+			}
+		}
+		
+		// Sort order details by product location
+		// Using a simple bubble sort to keep it readable
+		for j := 0; j < len(orders[i].OrderDetails)-1; j++ {
+			for k := j + 1; k < len(orders[i].OrderDetails); k++ {
+				locationJ := ""
+				locationK := ""
+				
+				if orders[i].OrderDetails[j].Product != nil {
+					locationJ = orders[i].OrderDetails[j].Product.Location
+				}
+				if orders[i].OrderDetails[k].Product != nil {
+					locationK = orders[i].OrderDetails[k].Product.Location
+				}
+				
+				// Sort alphabetically by location
+				if locationJ > locationK {
+					orders[i].OrderDetails[j], orders[i].OrderDetails[k] = orders[i].OrderDetails[k], orders[i].OrderDetails[j]
+				}
+			}
+		}
 	}
 
 	// Convert to response format
@@ -194,185 +100,8 @@ func (moc *MobileOrderController) GetMyPickingOrders(c *gin.Context) {
 		orderResponses[i] = order.ToOrderResponse()
 	}
 
-	message := fmt.Sprintf("Found %d order(s) currently being picked by you", len(orders))
+	message := fmt.Sprintf("Found %d order(s) currently being picked for you", len(orders))
 	utilities.SuccessResponse(c, http.StatusOK, message, orderResponses)
-}
-
-// PickingOrder godoc
-// @Summary Pick an order for processing by mobile
-// @Description Change order processing status from "ready to pick" to "picking process" and assign to current picker
-// @Tags mobile-orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "Order ID"
-// @Success 200 {object} utilities.Response{data=models.OrderResponse}
-// @Failure 400 {object} utilities.Response
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Failure 404 {object} utilities.Response
-// @Router /api/mobile/orders/{id}/pick [put]
-func (moc *MobileOrderController) PickingOrder(c *gin.Context) {
-	// Get order ID from URL parameter
-	orderID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid order ID", err.Error())
-		return
-	}
-
-	// Get current user ID from context (set by auth middleware)
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
-		return
-	}
-
-	userID, ok := userIDInterface.(uint)
-	if !ok {
-		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
-		return
-	}
-
-	var order models.Order
-	// Find order and check if it's available to pick
-	if err := moc.DB.Where("id = ? AND processing_status IN = ?", orderID, []string{"ready to pick", "pending picking"}).First(&order).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not available for picking", "order not found or already picked")
-		} else {
-			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
-		}
-		return
-	}
-
-	// Update order status and assign picker
-	now := time.Now()
-	order.ProcessingStatus = "picking process"
-	order.PickedBy = &userID
-	order.PickedAt = &now
-
-	// Save the changes
-	if err := moc.DB.Save(&order).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order", err.Error())
-		return
-	}
-
-	// Load order with details and picker for response
-	moc.DB.Preload("OrderDetails").Preload("Picker").First(&order, order.ID)
-
-	utilities.SuccessResponse(c, http.StatusOK, "Order picked successfully", order.ToOrderResponse())
-}
-
-// GetMobileOrder godoc
-// @Summary Get order by ID by mobile
-// @Description Get specific order details with product location and barcode joined by SKU.
-// @Tags mobile-orders
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "Order ID"
-// @Success 200 {object} utilities.Response{data=MobileOrderDetailResponse}
-// @Failure 401 {object} utilities.Response
-// @Failure 403 {object} utilities.Response
-// @Failure 404 {object} utilities.Response
-// @Router /api/mobile/orders/{id} [get]
-func (moc *MobileOrderController) GetMobileOrder(c *gin.Context) {
-	// Get order ID from URL parameter
-	orderID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid order ID", err.Error())
-		return
-	}
-
-	// Get current user ID from context
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
-		return
-	}
-
-	userID, ok := userIDInterface.(uint)
-	if !ok {
-		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
-		return
-	}
-
-	var order models.Order
-	// Find order assigned to current picker
-	if err := moc.DB.Where("id = ? AND picker_id = ?", orderID, userID).
-		Preload("OrderDetails").
-		Preload("Picker").
-		First(&order).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "order not found or not assigned to you")
-		} else {
-			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
-		}
-		return
-	}
-
-	// Get product details for each order detail
-	var orderDetailsWithProduct []MobileOrderDetailWithProduct
-	for _, detail := range order.OrderDetails {
-		var product models.Product
-
-		// Find product by SKU
-		if err := moc.DB.Where("sku = ?", detail.Sku).First(&product).Error; err != nil {
-			// If product not found, use empty location and barcode
-			orderDetailsWithProduct = append(orderDetailsWithProduct, MobileOrderDetailWithProduct{
-				OrderDetailResponse: models.OrderDetailResponse{
-					ID:          detail.ID,
-					Sku:         detail.Sku,
-					ProductName: detail.ProductName,
-					Variant:     detail.Variant,
-					Quantity:    detail.Quantity,
-				},
-				Image:    "Image not found",
-				Location: "Location not found",
-				Barcode:  "Barcode not found",
-			})
-		} else {
-			// Product found, include location and barcode
-			orderDetailsWithProduct = append(orderDetailsWithProduct, MobileOrderDetailWithProduct{
-				OrderDetailResponse: models.OrderDetailResponse{
-					ID:          detail.ID,
-					Sku:         detail.Sku,
-					ProductName: detail.ProductName,
-					Variant:     detail.Variant,
-					Quantity:    detail.Quantity,
-				},
-				Image:    product.Image,
-				Location: product.Location,
-				Barcode:  product.Barcode,
-			})
-		}
-	}
-
-	response := MobileOrderDetailResponse{
-		ID:               order.ID,
-		OrderGineeID:     order.OrderGineeID,
-		ProcessingStatus: order.ProcessingStatus,
-		EventStatus:      order.EventStatus,
-		Channel:          order.Channel,
-		Store:            order.Store,
-		Buyer:            order.Buyer,
-		Address:          order.Address,
-		Courier:          order.Courier,
-		Tracking:         order.Tracking,
-		SentBefore:       order.SentBefore.Format("2006-01-02 15:04:05"),
-		PickedBy:         order.PickOperator.FullName,
-		PickedAt:         order.PickedAt.Format("2006-01-02 15:04:05"),
-		PendingBy:        order.PendingOperator.FullName,
-		PendingAt:        order.PendingAt.Format("2006-01-02 15:04:05"),
-		ChangedBy:        order.ChangeOperator.FullName,
-		ChangedAt:        order.ChangedAt.Format("2006-01-02 15:04:05"),
-		CancelledBy:      order.CancelOperator.FullName,
-		CancelledAt:      order.CancelledAt.Format("2006-01-02 15:04:05"),
-		CreatedAt:        order.CreatedAt,
-		UpdatedAt:        order.UpdatedAt,
-		OrderDetails:     orderDetailsWithProduct,
-	}
-
-	utilities.SuccessResponse(c, http.StatusOK, "Order details retrieved successfully", response)
 }
 
 // CompletePickingOrder godoc
@@ -420,7 +149,7 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 
 	var order models.Order
 	// Find order assigned to current picker with "picking process" processing status
-	if err := tx.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND processing_status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
+	if err := tx.Preload("OrderDetails").Where("id = ? AND picked_by = ? AND processing_status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not in picking process", "order not found or not in picking process")
@@ -430,22 +159,24 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 		return
 	}
 
-	// Create PickOrder record
-	pickOrder := models.PickedOrder{
+	// Update order processing status and set picked_at timestamp
+	now := time.Now()
+	order.ProcessingStatus = "picking complete"
+	order.PickedAt = &now
+
+	// Create PickedOrder record
+	pickedOrder := models.PickedOrder{
 		OrderID:  order.ID,
 		PickedBy: userID,
 	}
 
-	if err := tx.Create(&pickOrder).Error; err != nil {
+	if err := tx.Create(&pickedOrder).Error; err != nil {
 		tx.Rollback()
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to create pick order", err.Error())
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to create picked order record", err.Error())
 		return
 	}
 
-	// Update order processing status to complete
-	order.ProcessingStatus = "picking complete"
-
-	// Save the changes
+	// Save the order changes
 	if err := tx.Save(&order).Error; err != nil {
 		tx.Rollback()
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to complete order", err.Error())
@@ -459,7 +190,21 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 	}
 
 	// Load order with details and picker for response
-	moc.DB.Preload("OrderDetails").Preload("Picker").First(&order, order.ID)
+	moc.DB.Preload("OrderDetails").
+		Preload("PickOperator").
+		Preload("AssignOperator").
+		Preload("PendingOperator").
+		Preload("ChangeOperator").
+		Preload("CancelOperator").
+		First(&order, order.ID)
+
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := moc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
+		}
+	}
 
 	utilities.SuccessResponse(c, http.StatusOK, "Order picking completed successfully and pick order records created", order.ToOrderResponse())
 }

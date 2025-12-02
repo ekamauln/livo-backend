@@ -386,136 +386,6 @@ definitions:
       total:
         type: integer
     type: object
-  controllers.MobileOrderDetailResponse:
-    properties:
-      address:
-        type: string
-      buyer:
-        type: string
-      cancelled_at:
-        type: string
-      cancelled_by:
-        type: string
-      changed_at:
-        type: string
-      changed_by:
-        type: string
-      channel:
-        type: string
-      courier:
-        type: string
-      created_at:
-        type: string
-      event_status:
-        type: string
-      id:
-        type: integer
-      order_details:
-        items:
-          $ref: '#/definitions/controllers.MobileOrderDetailWithProduct'
-        type: array
-      order_ginee_id:
-        type: string
-      pending_at:
-        type: string
-      pending_by:
-        type: string
-      picked_at:
-        type: string
-      picked_by:
-        type: string
-      processing_status:
-        type: string
-      sent_before:
-        type: string
-      store:
-        type: string
-      tracking:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  controllers.MobileOrderDetailWithProduct:
-    properties:
-      barcode:
-        type: string
-      id:
-        type: integer
-      image:
-        type: string
-      location:
-        type: string
-      product:
-        allOf:
-        - $ref: '#/definitions/models.ProductResponse'
-        description: Related data
-      product_name:
-        type: string
-      quantity:
-        type: integer
-      sku:
-        type: string
-      variant:
-        type: string
-    type: object
-  controllers.MobileOrderListResponse:
-    properties:
-      address:
-        type: string
-      buyer:
-        type: string
-      cancelled_at:
-        type: string
-      cancelled_by:
-        type: string
-      changed_at:
-        type: string
-      changed_by:
-        type: string
-      channel:
-        type: string
-      courier:
-        type: string
-      created_at:
-        type: string
-      event_status:
-        type: string
-      id:
-        type: integer
-      order_details:
-        items:
-          $ref: '#/definitions/controllers.MobileOrderDetailWithProduct'
-        type: array
-      order_ginee_id:
-        type: string
-      pending_at:
-        type: string
-      pending_by:
-        type: string
-      picked_at:
-        type: string
-      picked_by:
-        type: string
-      processing_status:
-        type: string
-      sent_before:
-        type: string
-      store:
-        type: string
-      tracking:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  controllers.MobileOrdersListResponse:
-    properties:
-      orders:
-        items:
-          $ref: '#/definitions/controllers.MobileOrderListResponse'
-        type: array
-      pagination:
-        $ref: '#/definitions/utilities.PaginationResponse'
-    type: object
   controllers.MobileReturnsListResponse:
     properties:
       mobile_returns:
@@ -2671,23 +2541,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get list of all orders with "ready to pick" processing status,
-        Optional search by order ID or tracking number.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: Search by order Ginee ID or tracking number
-        in: query
-        name: search
-        type: string
+      description: 'Get list of orders currently being picked by the logged-in user
+        (processing status: "picking process")'
       produces:
       - application/json
       responses:
@@ -2698,7 +2553,9 @@ paths:
             - $ref: '#/definitions/utilities.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/controllers.MobileOrdersListResponse'
+                  items:
+                    $ref: '#/definitions/models.OrderResponse'
+                  type: array
               type: object
         "401":
           description: Unauthorized
@@ -2710,48 +2567,7 @@ paths:
             $ref: '#/definitions/utilities.Response'
       security:
       - BearerAuth: []
-      summary: Get all orders by mobile
-      tags:
-      - mobile-orders
-  /api/mobile/orders/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get specific order details with product location and barcode joined
-        by SKU.
-      parameters:
-      - description: Order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/controllers.MobileOrderDetailResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get order by ID by mobile
+      summary: Get my ongoing picking orders by mobile
       tags:
       - mobile-orders
   /api/mobile/orders/{id}/complete:
@@ -2848,84 +2664,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get orders pending pick assignment
-      tags:
-      - mobile-orders
-  /api/mobile/orders/{id}/pick:
-    put:
-      consumes:
-      - application/json
-      description: Change order processing status from "ready to pick" to "picking
-        process" and assign to current picker
-      parameters:
-      - description: Order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.OrderResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Pick an order for processing by mobile
-      tags:
-      - mobile-orders
-  /api/mobile/orders/my-picking:
-    get:
-      consumes:
-      - application/json
-      description: 'Get list of orders currently being picked by the logged-in user
-        (processing status: "picking process")'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.OrderResponse'
-                  type: array
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get my ongoing picking orders by mobile
       tags:
       - mobile-orders
   /api/mobile/returns:
@@ -3704,6 +3442,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Get orders pending pick assignment
+      tags:
+      - orders
+  /api/orders/assigned:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all orders currently assigned to all pickers that are
+        in "picking process" status. and filter by current date.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.OrderResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get orders assigned to all pickers
       tags:
       - orders
   /api/orders/bulk:
