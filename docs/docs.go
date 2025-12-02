@@ -1951,14 +1951,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/mobile/orders/{id}/pending": {
+        "/api/mobile/orders/{id}/pending-pick": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change order processing status from \"picking process\" to \"pending picking\" and unassign picker",
+                "description": "Pending order that already assigned to a picker, but not picked yet. Requires coordinator username and password.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1968,14 +1968,23 @@ const docTemplate = `{
                 "tags": [
                     "mobile-orders"
                 ],
-                "summary": "Pending picking process by mobile",
+                "summary": "Get orders pending pick assignment",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Order ID",
+                        "description": "Order ID to pending picking process",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Pending pick request with coordinator credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.PendingPickRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -3042,6 +3051,88 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/orders/{id}/assign-picker": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Assign a picker to an order, setting assigned_by to current user, assigned_at to now, picked_by to specified picker, and processing_status to \"picking process\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Assign a picker to an order",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID to assign picker",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assign picker request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.AssignPickerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.OrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/orders/{id}/cancel": {
             "put": {
                 "security": [
@@ -3237,6 +3328,88 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/controllers.DuplicateOrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/{id}/pending-pick": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pending order that already assigned to a picker, but not picked yet.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Get orders pending pick assignment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID to pending picking process",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pending pick request with coordinator credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.PendingPickRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.OrderResponse"
                                         }
                                     }
                                 }
@@ -6139,6 +6312,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.AssignPickerRequest": {
+            "type": "object",
+            "required": [
+                "picker_id"
+            ],
+            "properties": {
+                "picker_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "controllers.AssignRoleRequest": {
             "type": "object",
             "required": [
@@ -7054,6 +7239,23 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/utilities.PaginationResponse"
+                }
+            }
+        },
+        "controllers.PendingPickRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "coordinator_password"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "coordinator_user"
                 }
             }
         },
@@ -8056,6 +8258,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "assigned_at": {
+                    "type": "string"
+                },
+                "assigned_by": {
                     "type": "string"
                 },
                 "buyer": {

@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  controllers.AssignPickerRequest:
+    properties:
+      picker_id:
+        example: 1
+        type: integer
+    required:
+    - picker_id
+    type: object
   controllers.AssignRoleRequest:
     properties:
       role_name:
@@ -617,6 +625,18 @@ definitions:
         type: array
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.PendingPickRequest:
+    properties:
+      password:
+        example: coordinator_password
+        type: string
+      username:
+        example: coordinator_user
+        type: string
+    required:
+    - password
+    - username
     type: object
   controllers.PickedOrdersListResponse:
     properties:
@@ -1285,6 +1305,10 @@ definitions:
   models.OrderResponse:
     properties:
       address:
+        type: string
+      assigned_at:
+        type: string
+      assigned_by:
         type: string
       buyer:
         type: string
@@ -2775,18 +2799,24 @@ paths:
       summary: Complete picking process by mobile
       tags:
       - mobile-orders
-  /api/mobile/orders/{id}/pending:
+  /api/mobile/orders/{id}/pending-pick:
     put:
       consumes:
       - application/json
-      description: Change order processing status from "picking process" to "pending
-        picking" and unassign picker
+      description: Pending order that already assigned to a picker, but not picked
+        yet. Requires coordinator username and password.
       parameters:
-      - description: Order ID
+      - description: Order ID to pending picking process
         in: path
         name: id
         required: true
         type: integer
+      - description: Pending pick request with coordinator credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.PendingPickRequest'
       produces:
       - application/json
       responses:
@@ -2817,7 +2847,7 @@ paths:
             $ref: '#/definitions/utilities.Response'
       security:
       - BearerAuth: []
-      summary: Pending picking process by mobile
+      summary: Get orders pending pick assignment
       tags:
       - mobile-orders
   /api/mobile/orders/{id}/pick:
@@ -3432,6 +3462,58 @@ paths:
       summary: Update order and order details
       tags:
       - orders
+  /api/orders/{id}/assign-picker:
+    put:
+      consumes:
+      - application/json
+      description: Assign a picker to an order, setting assigned_by to current user,
+        assigned_at to now, picked_by to specified picker, and processing_status to
+        "picking process"
+      parameters:
+      - description: Order ID to assign picker
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign picker request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AssignPickerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Assign a picker to an order
+      tags:
+      - orders
   /api/orders/{id}/cancel:
     put:
       consumes:
@@ -3571,6 +3653,57 @@ paths:
       security:
       - BearerAuth: []
       summary: Duplicate an order
+      tags:
+      - orders
+  /api/orders/{id}/pending-pick:
+    put:
+      consumes:
+      - application/json
+      description: Pending order that already assigned to a picker, but not picked
+        yet.
+      parameters:
+      - description: Order ID to pending picking process
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Pending pick request with coordinator credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.PendingPickRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get orders pending pick assignment
       tags:
       - orders
   /api/orders/bulk:

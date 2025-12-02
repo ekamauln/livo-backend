@@ -482,7 +482,7 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 func (moc *MobileOrderController) PendingPickOrders(c *gin.Context) {
 	orderID := c.Param("id")
 
-	var req MobilePendingPickRequest
+	var req PendingPickRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utilities.ValidationErrorResponse(c, err)
 		return
@@ -644,7 +644,7 @@ type MobileOrderDetailWithProduct struct {
 	Barcode  string `json:"barcode"`
 }
 
-type MobilePendingPickRequest struct {
+type PendingPickRequest struct {
 	Username string `json:"username" binding:"required" example:"coordinator_user"`
 	Password string `json:"password" binding:"required" example:"coordinator_password"`
 }
