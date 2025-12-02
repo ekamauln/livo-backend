@@ -157,8 +157,7 @@ func (oc *OrderController) GetOrders(c *gin.Context) {
 
 	// Get orders with pagination, filters, sorted by ID descending
 	if err := query.Order("id DESC").Limit(limit).Offset(offset).
-		Preload("PickOperator.UserRoles.Role").
-		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PickOperator").
 		Preload("PendingOperator").
 		Preload("ChangeOperator").
 		Preload("CancelOperator").
