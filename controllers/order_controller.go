@@ -159,6 +159,10 @@ func (oc *OrderController) GetOrders(c *gin.Context) {
 	if err := query.Order("id DESC").Limit(limit).Offset(offset).
 		Preload("PickOperator.UserRoles.Role").
 		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PendingOperator").
+		Preload("ChangeOperator").
+		Preload("CancelOperator").
+		Preload("AssignOperator").
 		Preload("OrderDetails").
 		Find(&orders).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve orders", err.Error())
@@ -237,6 +241,10 @@ func (oc *OrderController) GetOrder(c *gin.Context) {
 		Preload("OrderDetails").
 		Preload("PickOperator.UserRoles.Role").
 		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PendingOperator").
+		Preload("ChangeOperator").
+		Preload("CancelOperator").
+		Preload("AssignOperator").
 		First(&order, orderID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
@@ -441,6 +449,7 @@ func (oc *OrderController) UpdateOrder(c *gin.Context) {
 	}
 
 	// Update basic order fields
+	order.ChangedBy = &userID
 	eventStatus := "changed"
 	order.EventStatus = &eventStatus
 	order.Channel = req.Channel
