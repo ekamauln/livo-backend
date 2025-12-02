@@ -309,6 +309,10 @@ func (oc *OrderController) BulkCreateOrders(c *gin.Context) {
 		if orderReq.SentBefore != "" {
 			if parsedTime, err := time.Parse("2006-01-02 15:04:00", orderReq.SentBefore); err == nil {
 				order.SentBefore = parsedTime
+			} else {
+				if parsedTime, err := time.Parse("2006-01-02 15:04", orderReq.SentBefore); err == nil {
+					order.SentBefore = parsedTime
+				}
 			}
 		}
 
