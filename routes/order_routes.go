@@ -19,9 +19,20 @@ func SetupOrderRoutes(api *gin.RouterGroup, cfg *config.Config, orderController 
 		order.GET("/:id", orderController.GetOrder)                               // Get specific order by ID (full details)
 		order.POST("/bulk", orderController.BulkCreateOrders)                     // Create multiple orders
 		order.PUT("/:id", orderController.UpdateOrder)                            // Update order details
-		order.POST("/:id/duplicate", orderController.DuplicateOrder)              // Duplicate an order
-		order.PUT("/:id/cancel", orderController.CancelOrder)                     // Cancel an order
 		order.PUT("/:id/complained", orderController.UpdateOrderComplainedStatus) // Update order complained status
+	}
+
+	// Order management routes (admin only)
+	order.Use(middleware.RequireAdminRoles())
+	{
+		order.POST("/:id/duplicate", orderController.DuplicateOrder) // Duplicate an order
+		order.PUT("/:id/cancel", orderController.CancelOrder)        // Cancel an order
+	}
+
+	// Order management routes (coordinator only)
+	order.Use(middleware.RequireCoordinatorRoles())
+	{
+		order.PUT("/:id/assign-picker", orderController.AssignPicker) // Assign picker to order
 	}
 }
 
@@ -37,6 +48,6 @@ func SetupMobileOrderRoutes(api *gin.RouterGroup, cfg *config.Config, mobileOrde
 		mobileOrder.GET(":id/pick", mobileOrderController.PickingOrder)             // Pick order
 		mobileOrder.GET("/my-picking", mobileOrderController.GetMyPickingOrders)    // Get my ongoing picking orders
 		mobileOrder.GET(":id/complete", mobileOrderController.CompletePickingOrder) // Complete order
-		mobileOrder.PUT(":id/pending", mobileOrderController.PendingPickingOrder)   // Pending picking order
+		mobileOrder.PUT(":id/pending", mobileOrderController.PendingPickOrders)     // Pending picking order
 	}
 }

@@ -818,6 +818,201 @@ func (oc *OrderController) CancelOrder(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, "Order cancelled successfully", order.ToOrderResponse())
 }
 
+// AssignPicker godoc
+// @Summary Assign a picker to an order
+// @Description Assign a picker to an order, setting assigned_by to current user, assigned_at to now, picked_by to specified picker, and processing_status to "picking process"
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID to assign picker"
+// @Param request body AssignPickerRequest true "Assign picker request"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
+// @Router /api/orders/{id}/assign-picker [put]
+func (oc *OrderController) AssignPicker(c *gin.Context) {
+	orderID := c.Param("id")
+
+	var req AssignPickerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utilities.ValidationErrorResponse(c, err)
+		return
+	}
+
+	// Get current user ID from context (assigner)
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
+		return
+	}
+
+	// Verify the picker exists
+	var picker models.User
+	if err := oc.DB.First(&picker, req.PickerID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Picker not found", "no user found with the specified picker ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find picker", err.Error())
+		return
+	}
+
+	// Find the order
+	var order models.Order
+	if err := oc.DB.First(&order, orderID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
+		return
+	}
+
+	// Check if order is cancelled
+	if order.EventStatus != nil && *order.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "cannot assign picker to a cancelled order")
+		return
+	}
+
+	// Check if order is already in picking process or completed
+	if order.ProcessingStatus == "picking process" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already being picked", "this order is already in picking process")
+		return
+	}
+
+	if order.ProcessingStatus == "qc process" || order.ProcessingStatus == "completed" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order cannot be assigned", fmt.Sprintf("cannot assign picker when processing status is '%s'", order.ProcessingStatus))
+		return
+	}
+
+	// Update order with assignment details
+	now := time.Now()
+	order.AssignedBy = &userID
+	order.AssignedAt = &now
+	order.PickedBy = &req.PickerID
+	order.ProcessingStatus = "picking process"
+
+	if err := oc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to assign picker", err.Error())
+		return
+	}
+
+	// Reload order with all relationships
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("AssignOperator").
+		First(&order, order.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload order", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
+		}
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Picker assigned successfully", order.ToOrderResponse())
+}
+
+// PendingPickOrders godoc
+// @Summary Get orders pending pick assignment
+// @Description Pending order that already assigned to a picker, but not picked yet.
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID to pending picking process"
+// @Param request body PendingPickRequest true "Pending pick request with coordinator credentials"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
+// @Router /api/orders/{id}/pending-pick [put]
+func (oc *OrderController) PendingPickOrders(c *gin.Context) {
+	orderID := c.Param("id")
+
+	// Get current user ID from context (pending operator)
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID", "user ID has invalid type")
+		return
+	}
+
+	// Find the order
+	var order models.Order
+	if err := oc.DB.First(&order, orderID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
+		return
+	}
+
+	// Check if status order is "picking process"
+	if order.ProcessingStatus != "picking process" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order not in picking process", "only orders in 'picking process' status can be set to pending pick")
+		return
+	}
+
+	// Update order with pending pick details
+	now := time.Now()
+	order.ProcessingStatus = "pending picking"
+	order.PendingBy = &userID // Set pending operator
+	order.PendingAt = &now
+	order.PickedBy = nil   // Clear picked_by since it's pending
+	order.AssignedBy = nil // Clear assigned_by since it's pending
+	order.AssignedAt = nil // Clear assigned_at since it's pending
+
+	if err := oc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to set order to pending pick", err.Error())
+		return
+	}
+
+	// Reload order with all relationships
+	if err := oc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PendingOperator").
+		First(&order, order.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload order", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
+		}
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Order set to pending pick successfully", order.ToOrderResponse())
+}
+
+// Request and Response Structs
 type OrdersListResponse struct {
 	Orders     []models.OrderResponse       `json:"orders"`
 	Pagination utilities.PaginationResponse `json:"pagination"`
@@ -896,4 +1091,8 @@ type UpdateOrderDetailRequest struct {
 type DuplicateOrderResponse struct {
 	OriginalOrder   models.OrderResponse `json:"original_order"`
 	DuplicatedOrder models.OrderResponse `json:"duplicated_order"`
+}
+
+type AssignPickerRequest struct {
+	PickerID uint `json:"picker_id" binding:"required" example:"1"`
 }

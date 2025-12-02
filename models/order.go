@@ -18,6 +18,8 @@ type Order struct {
 	Courier          string         `json:"courier" example:"JNE"`
 	Tracking         string         `gorm:"unique;not null" json:"tracking" example:"JNE1234567890"`
 	SentBefore       time.Time      `json:"sent_before"`
+	AssignedBy       *uint          `gorm:"default:null" json:"assigned_by"`
+	AssignedAt       *time.Time     `gorm:"default:null" json:"assigned_at"`
 	PickedBy         *uint          `gorm:"default:null" json:"picked_by"`
 	PickedAt         *time.Time     `gorm:"default:null" json:"picked_at"`
 	PendingBy        *uint          `gorm:"default:null" json:"pending_by"`
@@ -37,6 +39,7 @@ type Order struct {
 	PendingOperator *User         `gorm:"foreignKey:PendingBy" json:"pending_operator,omitempty"`
 	CancelOperator  *User         `gorm:"foreignKey:CancelledBy" json:"canceller,omitempty"`
 	ChangeOperator  *User         `gorm:"foreignKey:ChangedBy" json:"changer,omitempty"`
+	AssignOperator  *User         `gorm:"foreignKey:AssignedBy" json:"assigner,omitempty"`
 }
 
 type OrderDetail struct {
@@ -65,6 +68,8 @@ type OrderResponse struct {
 	Tracking         string    `json:"tracking"`
 	SentBefore       string    `json:"sent_before"`
 	Complained       bool      `json:"complained"`
+	AssignedBy       string    `json:"assigned_by"`
+	AssignedAt       string    `json:"assigned_at"`
 	PickedBy         string    `json:"picked_by"`
 	PickedAt         string    `json:"picked_at"`
 	PendingBy        string    `json:"pending_by"`
@@ -173,6 +178,20 @@ func (o *Order) ToOrderResponse() OrderResponse {
 		cancelledAt = "-"
 	}
 
+	var assignedBy string
+	if o.AssignOperator != nil {
+		assignedBy = o.AssignOperator.FullName
+	} else {
+		assignedBy = "-"
+	}
+
+	var assignedAt string
+	if o.AssignedAt != nil {
+		assignedAt = o.AssignedAt.Format("2006-01-02 15:04:05")
+	} else {
+		assignedAt = "-"
+	}
+
 	return OrderResponse{
 		ID:               o.ID,
 		OrderGineeID:     o.OrderGineeID,
@@ -188,6 +207,8 @@ func (o *Order) ToOrderResponse() OrderResponse {
 		Complained:       o.Complained,
 		CreatedAt:        o.CreatedAt,
 		UpdatedAt:        o.UpdatedAt,
+		AssignedBy:       assignedBy,
+		AssignedAt:       assignedAt,
 		PickedBy:         pickedBy,
 		PickedAt:         pickedAt,
 		ChangedBy:        changedBy,

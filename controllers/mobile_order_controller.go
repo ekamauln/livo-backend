@@ -464,29 +464,58 @@ func (moc *MobileOrderController) CompletePickingOrder(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, "Order picking completed successfully and pick order records created", order.ToOrderResponse())
 }
 
-// PendingPickingOrder godoc
-// @Summary Pending picking process by mobile
-// @Description Change order processing status from "picking process" to "pending picking" and unassign picker
+// PendingPickOrders godoc
+// @Summary Get orders pending pick assignment
+// @Description Pending order that already assigned to a picker, but not picked yet. Requires coordinator username and password.
 // @Tags mobile-orders
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path int true "Order ID"
+// @Param id path int true "Order ID to pending picking process"
+// @Param request body PendingPickRequest true "Pending pick request with coordinator credentials"
 // @Success 200 {object} utilities.Response{data=models.OrderResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/mobile/orders/{id}/pending [put]
-func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
-	// Get order ID from URL parameter
-	orderID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid order ID", err.Error())
+// @Router /api/mobile/orders/{id}/pending-pick [put]
+func (moc *MobileOrderController) PendingPickOrders(c *gin.Context) {
+	orderID := c.Param("id")
+
+	var req MobilePendingPickRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utilities.ValidationErrorResponse(c, err)
 		return
 	}
 
-	// Get current user ID from context
+	// Verify coordinator credentials from request body
+	var coordinator models.User
+	if err := moc.DB.Preload("UserRoles.Role").Where("username = ?", req.Username).First(&coordinator).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid coordinator credentials", "coordinator user not found")
+		return
+	}
+
+	// Check password
+	if !utilities.CheckPasswordHash(req.Password, coordinator.Password) {
+		utilities.ErrorResponse(c, http.StatusUnauthorized, "Invalid coordinator credentials", "incorrect password")
+		return
+	}
+
+	// Check if user has coordinator role
+	hasCoordinatorRole := false
+	for _, userRole := range coordinator.UserRoles {
+		if userRole.Role.Name == "coordinator" || userRole.Role.Name == "superadmin" {
+			hasCoordinatorRole = true
+			break
+		}
+	}
+
+	if !hasCoordinatorRole {
+		utilities.ErrorResponse(c, http.StatusForbidden, "Insufficient permissions", "user does not have coordinator role")
+		return
+	}
+
+	// Get current user ID from context (pending operator)
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		utilities.ErrorResponse(c, http.StatusUnauthorized, "User not found", "user ID not found in context")
@@ -499,28 +528,57 @@ func (moc *MobileOrderController) PendingPickingOrder(c *gin.Context) {
 		return
 	}
 
+	// Find the order
 	var order models.Order
-	// Find order assigned to current picker with "picking process" processing status
-	if err := moc.DB.Preload("OrderDetails").Where("id = ? AND picker_id = ? AND processing_status = ?", orderID, userID, "picking process").First(&order).Error; err != nil {
+	if err := moc.DB.First(&order, orderID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found or not in picking process", "order not found or not in picking process")
-		} else {
-			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
 		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
 		return
 	}
 
-	// Update order processing status to "pending picking" and unassign picker
-	if err := moc.DB.Model(&order).Preload("OrderDetails").Select("processing_status", "picker_id", "picked_at").Updates(models.Order{
-		ProcessingStatus: "pending picking",
-		PickedBy:         nil,
-		PickedAt:         nil,
-	}).Error; err != nil {
-		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to pending picking order", err.Error())
+	// Check if status order is "picking process"
+	if order.ProcessingStatus != "picking process" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order not in picking process", "only orders in 'picking process' status can be set to pending pick")
 		return
 	}
 
-	utilities.SuccessResponse(c, http.StatusOK, "Pending picking order successfully", order.ToOrderResponse())
+	// Update order with pending pick details
+	now := time.Now()
+	order.ProcessingStatus = "pending picking"
+	order.PendingBy = &userID // Set pending operator
+	order.PendingAt = &now
+	order.PickedBy = nil   // Clear picked_by since it's pending
+	order.AssignedBy = nil // Clear assigned_by since it's pending
+	order.AssignedAt = nil // Clear assigned_at since it's pending
+
+	if err := moc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to set order to pending pick", err.Error())
+		return
+	}
+
+	// Reload order with all relationships
+	if err := moc.DB.
+		Preload("OrderDetails").
+		Preload("PickOperator.UserRoles.Role").
+		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PendingOperator").
+		First(&order, order.ID).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload order", err.Error())
+		return
+	}
+
+	// Manually fetch and attach products to order details
+	for i := range order.OrderDetails {
+		var product models.Product
+		if err := moc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+			order.OrderDetails[i].Product = &product
+		}
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Order set to pending pick successfully", order.ToOrderResponse())
 }
 
 // Response struct by mobile endpoints
@@ -584,4 +642,9 @@ type MobileOrderDetailWithProduct struct {
 	Image    string `json:"image"`
 	Location string `json:"location"`
 	Barcode  string `json:"barcode"`
+}
+
+type MobilePendingPickRequest struct {
+	Username string `json:"username" binding:"required" example:"coordinator_user"`
+	Password string `json:"password" binding:"required" example:"coordinator_password"`
 }

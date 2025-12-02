@@ -52,3 +52,8 @@ func RequireRoles(requiredRoles ...string) gin.HandlerFunc {
 func RequireCoordinatorRoles() gin.HandlerFunc {
 	return RequireRoles("superadmin", "coordinator")
 }
+
+// RequireAdminRoles for endpoints that require admin role
+func RequireAdminRoles() gin.HandlerFunc {
+	return RequireRoles("superadmin", "admin")
+}
