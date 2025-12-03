@@ -238,8 +238,7 @@ func (oc *OrderController) GetOrder(c *gin.Context) {
 
 	if err := oc.DB.
 		Preload("OrderDetails").
-		Preload("PickOperator.UserRoles.Role").
-		Preload("PickOperator.UserRoles.Assigner").
+		Preload("PickOperator").
 		Preload("PendingOperator").
 		Preload("ChangeOperator").
 		Preload("CancelOperator").

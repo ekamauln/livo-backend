@@ -48,7 +48,15 @@ func SetupMobileOrderRoutes(api *gin.RouterGroup, cfg *config.Config, mobileOrde
 	{
 		// Mobile order routes
 		mobileOrder.GET("", mobileOrderController.GetMyPickingOrders)                // Get my ongoing picking orders
+		mobileOrder.GET(":id", mobileOrderController.GetMyPickingOrder)              // Get my ongoing picking order
 		mobileOrder.PUT(":id/pending-pick", mobileOrderController.PendingPickOrders) // Pending picking order
-		mobileOrder.GET(":id/complete", mobileOrderController.CompletePickingOrder)  // Complete order
+		mobileOrder.PUT(":id/complete", mobileOrderController.CompletePickingOrder)  // Complete order
+	}
+	mobileOrderCoordinator := api.Group("/mobile/orders")
+	mobileOrderCoordinator.Use(middleware.AuthMiddleware(cfg))
+	mobileOrderCoordinator.Use(middleware.RequireCoordinatorRoles())
+	{
+		mobileOrderCoordinator.POST("/bulk-assign-picker", mobileOrderController.BulkAssignPicker) // Bulk assign pickers to orders
+		mobileOrderCoordinator.GET("/picked-orders", mobileOrderController.GetMobilePickedOrders)  // Get picked orders for coordinator
 	}
 }

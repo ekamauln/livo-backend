@@ -25,6 +25,17 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.BulkAssignSummary:
+    properties:
+      assigned:
+        type: integer
+      failed:
+        type: integer
+      skipped:
+        type: integer
+      total:
+        type: integer
+    type: object
   controllers.BulkCreateOrderRequest:
     properties:
       orders:
@@ -347,6 +358,15 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.FailedAssignment:
+    properties:
+      error:
+        type: string
+      index:
+        type: integer
+      tracking:
+        type: string
+    type: object
   controllers.FailedOrder:
     properties:
       error:
@@ -377,6 +397,40 @@ definitions:
       user:
         $ref: '#/definitions/models.UserResponse'
     type: object
+  controllers.MobileBulkAssignPickerRequest:
+    properties:
+      picker_id:
+        example: 1
+        type: integer
+      trackings:
+        example:
+        - JNE1234567890
+        - JNE0987654321
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - picker_id
+    - trackings
+    type: object
+  controllers.MobileBulkAssignPickerResponse:
+    properties:
+      assigned_orders:
+        items:
+          $ref: '#/definitions/models.OrderResponse'
+        type: array
+      failed_orders:
+        items:
+          $ref: '#/definitions/controllers.FailedAssignment'
+        type: array
+      skipped_orders:
+        items:
+          $ref: '#/definitions/controllers.SkippedAssignment'
+        type: array
+      summary:
+        $ref: '#/definitions/controllers.BulkAssignSummary'
+    type: object
   controllers.MobileChannelsListResponse:
     properties:
       channels:
@@ -385,6 +439,87 @@ definitions:
         type: array
       total:
         type: integer
+    type: object
+  controllers.MobileOrderDetailWithProduct:
+    properties:
+      barcode:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      location:
+        type: string
+      product:
+        allOf:
+        - $ref: '#/definitions/models.ProductResponse'
+        description: Related data
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      variant:
+        type: string
+    type: object
+  controllers.MobileOrderListResponse:
+    properties:
+      address:
+        type: string
+      buyer:
+        type: string
+      cancelled_at:
+        type: string
+      cancelled_by:
+        type: string
+      changed_at:
+        type: string
+      changed_by:
+        type: string
+      channel:
+        type: string
+      courier:
+        type: string
+      created_at:
+        type: string
+      event_status:
+        type: string
+      id:
+        type: integer
+      order_details:
+        items:
+          $ref: '#/definitions/controllers.MobileOrderDetailWithProduct'
+        type: array
+      order_ginee_id:
+        type: string
+      pending_at:
+        type: string
+      pending_by:
+        type: string
+      picked_at:
+        type: string
+      picked_by:
+        type: string
+      processing_status:
+        type: string
+      sent_before:
+        type: string
+      store:
+        type: string
+      tracking:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  controllers.MobileOrdersListResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/controllers.MobileOrderListResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
     type: object
   controllers.MobileReturnsListResponse:
     properties:
@@ -507,15 +642,6 @@ definitions:
     required:
     - password
     - username
-    type: object
-  controllers.PickedOrdersListResponse:
-    properties:
-      pagination:
-        $ref: '#/definitions/utilities.PaginationResponse'
-      picked_orders:
-        items:
-          $ref: '#/definitions/models.PickedOrderResponse'
-        type: array
     type: object
   controllers.ProductsListResponse:
     properties:
@@ -729,6 +855,15 @@ definitions:
         type: string
       operator:
         $ref: '#/definitions/controllers.RibbonOperatorFlowInfo'
+    type: object
+  controllers.SkippedAssignment:
+    properties:
+      index:
+        type: integer
+      reason:
+        type: string
+      tracking:
+        type: string
     type: object
   controllers.SkippedOrder:
     properties:
@@ -1252,25 +1387,6 @@ definitions:
         $ref: '#/definitions/models.UserResponse'
       tracking:
         type: string
-      updated_at:
-        type: string
-    type: object
-  models.PickedOrderResponse:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: integer
-      order:
-        allOf:
-        - $ref: '#/definitions/models.OrderResponse'
-        description: Related data
-      order_id:
-        type: integer
-      picked_by:
-        type: integer
-      picker:
-        $ref: '#/definitions/models.UserResponse'
       updated_at:
         type: string
     type: object
@@ -2570,6 +2686,51 @@ paths:
       summary: Get my ongoing picking orders by mobile
       tags:
       - mobile-orders
+  /api/mobile/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 'Get the order currently being picked by the logged-in user (processing
+        status: "picking process")'
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my ongoing picking order by mobile
+      tags:
+      - mobile-orders
   /api/mobile/orders/{id}/complete:
     put:
       consumes:
@@ -2664,6 +2825,95 @@ paths:
       security:
       - BearerAuth: []
       summary: Get orders pending pick assignment
+      tags:
+      - mobile-orders
+  /api/mobile/orders/bulk-assign-picker:
+    post:
+      consumes:
+      - application/json
+      description: Assign a picker to multiple orders by scanning tracking numbers,
+        setting assigned_by to current user, assigned_at to now, picked_by to specified
+        picker, and processing_status to "picking process"
+      parameters:
+      - description: Bulk assign picker request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.MobileBulkAssignPickerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileBulkAssignPickerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Bulk assign a picker to multiple orders by mobile
+      tags:
+      - mobile-orders
+  /api/mobile/orders/picked-orders:
+    get:
+      consumes:
+      - application/json
+      description: Get list of picked orders with pagination, search filter, filtered
+        by processing status "picking process" and current date
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search term to filter by order ginee ID or tracking number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.MobileOrdersListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get picked orders for coordinator by mobile
       tags:
       - mobile-orders
   /api/mobile/returns:
@@ -3730,107 +3980,6 @@ paths:
       summary: Get outbound counts per day for current month
       tags:
       - outbounds
-  /api/picked-orders:
-    get:
-      consumes:
-      - application/json
-      description: Get a list of all picked orders with their details and search.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Page size
-        in: query
-        name: page_size
-        type: integer
-      - description: Start date (YYYY-MM-DD format)
-        in: query
-        name: start_date
-        type: string
-      - description: End date (YYYY-MM-DD format)
-        in: query
-        name: end_date
-        type: string
-      - description: Search by Picker name, Order Ginee ID, or Tracking (partial match)
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/controllers.PickedOrdersListResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get all Picked Orders
-      tags:
-      - Picked-Orders
-  /api/picked-orders/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a picked order by ID.
-      parameters:
-      - description: Pick order ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.PickedOrderResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get a picked order by ID
-      tags:
-      - Picked-Orders
   /api/products:
     get:
       consumes:
