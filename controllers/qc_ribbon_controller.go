@@ -70,9 +70,9 @@ func (qrc *QcRibbonController) GetQcRibbons(c *gin.Context) {
 
 	// Get qc-ribbons with pagination, filters, and preload relationships
 	if err := query.Order("id DESC").
-		Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+		Preload("QcRibbonDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		Limit(limit).Offset(offset).
 		Find(&qcRibbons).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve qc-ribbons", err.Error())
@@ -153,9 +153,9 @@ func (qrc *QcRibbonController) GetQcRibbon(c *gin.Context) {
 
 	var qcRibbon models.QcRibbon
 
-	if err := qrc.DB.Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	if err := qrc.DB.Preload("QcRibbonDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		First(&qcRibbon, qcRibbonID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Qc-ribbon not found", err.Error())
 		return
@@ -284,6 +284,13 @@ func (qrc *QcRibbonController) CreateQcRibbon(c *gin.Context) {
 		}
 	}
 
+	// Update order processing_status to "qc complete"
+	if err := tx.Model(&models.Order{}).Where("tracking = ?", req.Tracking).Update("processing_status", "qc complete").Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order status", err.Error())
+		return
+	}
+
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to commit transaction", err.Error())
@@ -291,9 +298,9 @@ func (qrc *QcRibbonController) CreateQcRibbon(c *gin.Context) {
 	}
 
 	// Load the created qc-ribbon with all relationships
-	qrc.DB.Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	qrc.DB.Preload("QcRibbonDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		First(&qcRibbon, qcRibbon.ID)
 
 	// Load order call from the model's LoadOrder method

@@ -70,9 +70,9 @@ func (qoc *QcOnlineController) GetQcOnlines(c *gin.Context) {
 
 	// Get qc-onlines with pagination, filters, and preload relationships
 	if err := query.Order("id DESC").
-		Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+		Preload("QcOnlineDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		Limit(limit).Offset(offset).Find(&qcOnlines).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve qc-onlines", err.Error())
 		return
@@ -152,9 +152,9 @@ func (qoc *QcOnlineController) GetQcOnline(c *gin.Context) {
 
 	var qcOnline models.QcOnline
 
-	if err := qoc.DB.Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	if err := qoc.DB.Preload("QcOnlineDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		First(&qcOnline, qcOnlineID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Qc-online not found", err.Error())
 		return
@@ -286,6 +286,13 @@ func (qoc *QcOnlineController) CreateQcOnline(c *gin.Context) {
 		}
 	}
 
+	// Update order processing_status to "qc complete"
+	if err := tx.Model(&models.Order{}).Where("tracking = ?", req.Tracking).Update("processing_status", "qc complete").Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order status", err.Error())
+		return
+	}
+
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to commit transaction", err.Error())
@@ -293,9 +300,9 @@ func (qoc *QcOnlineController) CreateQcOnline(c *gin.Context) {
 	}
 
 	// Load the created qc-online with relationships
-	qoc.DB.Preload("Details.Box").
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	qoc.DB.Preload("QcOnlineDetails.Box").
+		Preload("QcOperator.UserRoles.Role").
+		Preload("QcOperator.UserRoles.Assigner").
 		First(&qcOnline, qcOnline.ID)
 
 	// Load order call from the model's LoadOrder method

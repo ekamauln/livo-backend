@@ -15,11 +15,13 @@ func SetupOrderRoutes(api *gin.RouterGroup, cfg *config.Config, orderController 
 	order.Use(middleware.AuthMiddleware(cfg))
 	{
 		// Public order routes
-		order.GET("", orderController.GetOrders)                                  // Get all orders (with optional search and date filtering)
-		order.GET("/:id", orderController.GetOrder)                               // Get specific order by ID (full details)
-		order.POST("/bulk", orderController.BulkCreateOrders)                     // Create multiple orders
-		order.PUT("/:id", orderController.UpdateOrder)                            // Update order details
-		order.PUT("/:id/complained", orderController.UpdateOrderComplainedStatus) // Update order complained status
+		order.GET("", orderController.GetOrders)                                         // Get all orders (with optional search and date filtering)
+		order.GET("/:id", orderController.GetOrder)                                      // Get specific order by ID (full details)
+		order.POST("/bulk", orderController.BulkCreateOrders)                            // Create multiple orders
+		order.PUT("/:id", orderController.UpdateOrder)                                   // Update order details
+		order.PUT("/:id/complained", orderController.UpdateOrderComplainedStatus)        // Update order complained status
+		order.PUT("/:id/qc-process", orderController.QCProcessStatusOrder)               // Update order QC process status
+		order.PUT("/:id/picking-completed", orderController.PickingCompletedStatusOrder) // Update order picking complete
 	}
 
 	// Order management routes (admin only)

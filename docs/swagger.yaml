@@ -3694,6 +3694,96 @@ paths:
       summary: Get orders pending pick assignment
       tags:
       - orders
+  /api/orders/{id}/picking-completed:
+    put:
+      consumes:
+      - application/json
+      description: Change operation status order to "picking completed" when qc process
+        are canceled.
+      parameters:
+      - description: Order ID to change to picking completed
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Change operation status order to "picking completed"
+      tags:
+      - orders
+  /api/orders/{id}/qc-process:
+    put:
+      consumes:
+      - application/json
+      description: Change operation status order to "qc process" when starting qc
+        process.
+      parameters:
+      - description: Order ID to change to qc process
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Change operation status order to "qc process"
+      tags:
+      - orders
   /api/orders/assigned:
     get:
       consumes:

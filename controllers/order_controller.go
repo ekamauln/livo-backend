@@ -638,15 +638,37 @@ func (oc *OrderController) DuplicateOrder(c *gin.Context) {
 
 	// Store the original tracking before modification
 	originalTracking := originalOrder.Tracking
+	newTracking := "X-" + originalOrder.Tracking
 
 	// Update original order's order_ginee_id by adding "-X2" suffix and tracking with "X-" prefix
 	// eventStatus := "duplicated"
 	// originalOrder.EventStatus = &eventStatus
 	originalOrder.OrderGineeID = originalOrder.OrderGineeID + "-X2"
-	originalOrder.Tracking = "X-" + originalOrder.Tracking
+	originalOrder.Tracking = newTracking
 	if err := tx.Save(&originalOrder).Error; err != nil {
 		tx.Rollback()
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update original order", err.Error())
+		return
+	}
+
+	// Update tracking in qc_online if it exists
+	if err := tx.Model(&models.QcOnline{}).Where("tracking = ?", originalTracking).Update("tracking", newTracking).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update qc_online tracking", err.Error())
+		return
+	}
+
+	// Update tracking in qc_ribbon if it exists
+	if err := tx.Model(&models.QcRibbon{}).Where("tracking = ?", originalTracking).Update("tracking", newTracking).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update qc_ribbon tracking", err.Error())
+		return
+	}
+
+	// Update tracking in outbound if it exists
+	if err := tx.Model(&models.Outbound{}).Where("tracking = ?", originalTracking).Update("tracking", newTracking).Error; err != nil {
+		tx.Rollback()
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update outbound tracking", err.Error())
 		return
 	}
 
@@ -1094,6 +1116,106 @@ func (oc *OrderController) GetAssignedOrders(c *gin.Context) {
 
 	// Return success response
 	utilities.SuccessResponse(c, http.StatusOK, "Assigned orders retrieved successfully", orderResponses)
+}
+
+// QCProcessStatusOrder godoc
+// @Summary Change operation status order to "qc process"
+// @Description Change operation status order to "qc process" when starting qc process.
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID to change to qc process"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
+// @Router /api/orders/{id}/qc-process [put]
+func (oc *OrderController) QCProcessStatusOrder(c *gin.Context) {
+	orderID := c.Param("id")
+
+	// Find the order
+	var order models.Order
+	if err := oc.DB.First(&order, orderID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve order", err.Error())
+		return
+	}
+
+	// Check if order is already in qc process
+	if order.ProcessingStatus == "qc process" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already in QC process", "this order is already in 'qc process' status")
+		return
+	}
+
+	// Check if order is cancelled
+	if order.EventStatus != nil && *order.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "cannot change status of a cancelled order")
+		return
+	}
+
+	// Update order status to "qc process"
+	order.ProcessingStatus = "qc process"
+	if err := oc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order status", err.Error())
+		return
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Order status updated to QC process", order.ToOrderResponse())
+}
+
+// PickingCompletedStatusOrder godoc
+// @Summary Change operation status order to "picking completed"
+// @Description Change operation status order to "picking completed" when qc process are canceled.
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID to change to picking completed"
+// @Success 200 {object} utilities.Response{data=models.OrderResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Failure 404 {object} utilities.Response
+// @Router /api/orders/{id}/picking-completed [put]
+func (oc *OrderController) PickingCompletedStatusOrder(c *gin.Context) {
+	orderID := c.Param("id")
+
+	// Find the order
+	var order models.Order
+	if err := oc.DB.First(&order, orderID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			return
+		}
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve order", err.Error())
+		return
+	}
+
+	// Check if order is already completed
+	if order.ProcessingStatus == "qc completed" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already finished qc", "this order is already in 'qc completed' status")
+		return
+	}
+
+	// Check if order is cancelled
+	if order.EventStatus != nil && *order.EventStatus == "cancelled" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already cancelled", "cannot change status of a cancelled order")
+		return
+	}
+
+	// Update order status to "picking completed"
+	order.ProcessingStatus = "picking completed"
+	if err := oc.DB.Save(&order).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order status", err.Error())
+		return
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, "Order status updated to picking completed", order.ToOrderResponse())
 }
 
 // Request and Response Structs
