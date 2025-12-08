@@ -46,7 +46,10 @@ func (lfc *LostFoundController) GetLostFounds(c *gin.Context) {
 	var total int64
 
 	// Build query with optional search
-	query := lfc.DB.Model(&models.LostFound{}).Preload("Product").Preload("CreateOperator")
+	query := lfc.DB.Model(&models.LostFound{}).
+		Preload("Product").
+		Preload("CreateOperator.UserRoles.Role").
+		Preload("CreateOperator.UserRoles.Assigner")
 
 	if search != "" {
 		// Search by product sku or reason with partial match
@@ -106,7 +109,10 @@ func (lfc *LostFoundController) GetLostFound(c *gin.Context) {
 	lostFoundID := c.Param("id")
 
 	var lostFound models.LostFound
-	if err := lfc.DB.Preload("Product").Preload("CreateOperator").First(&lostFound, lostFoundID).Error; err != nil {
+	if err := lfc.DB.Preload("Product").
+		Preload("CreateOperator.UserRoles.Role").
+		Preload("CreateOperator.UserRoles.Assigner").
+		First(&lostFound, lostFoundID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Lost and found item not found", err.Error())
 		return
 	}
@@ -155,7 +161,10 @@ func (lfc *LostFoundController) UpdateLostFound(c *gin.Context) {
 	}
 
 	// Reload with relationships
-	if err := lfc.DB.Preload("Product").Preload("CreateOperator").First(&lostFound, lostFoundID).Error; err != nil {
+	if err := lfc.DB.Preload("Product").
+		Preload("CreateOperator.UserRoles.Role").
+		Preload("CreateOperator.UserRoles.Assigner").
+		First(&lostFound, lostFoundID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload lost and found item", err.Error())
 		return
 	}
@@ -241,7 +250,10 @@ func (lfc *LostFoundController) CreateLostFound(c *gin.Context) {
 	}
 
 	// Reload with relationships
-	if err := lfc.DB.Preload("Product").Preload("CreateOperator").First(&lostFound, lostFound.ID).Error; err != nil {
+	if err := lfc.DB.Preload("Product").
+		Preload("CreateOperator.UserRoles.Role").
+		Preload("CreateOperator.UserRoles.Assigner").
+		First(&lostFound, lostFound.ID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to reload lost and found item", err.Error())
 		return
 	}
