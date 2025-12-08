@@ -46,7 +46,7 @@ func (lfc *LostFoundController) GetLostFounds(c *gin.Context) {
 	var total int64
 
 	// Build query with optional search
-	query := lfc.DB.Model(&models.LostFound{}).Preload("Product")
+	query := lfc.DB.Model(&models.LostFound{}).Preload("Product").Preload("CreateOperator")
 
 	if search != "" {
 		// Search by product sku or reason with partial match
@@ -106,7 +106,7 @@ func (lfc *LostFoundController) GetLostFound(c *gin.Context) {
 	lostFoundID := c.Param("id")
 
 	var lostFound models.LostFound
-	if err := lfc.DB.Preload("Product").First(&lostFound, lostFoundID).Error; err != nil {
+	if err := lfc.DB.Preload("Product").Preload("CreateOperator").First(&lostFound, lostFoundID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Lost and found item not found", err.Error())
 		return
 	}
