@@ -633,6 +633,12 @@ func (oc *OrderController) DuplicateOrder(c *gin.Context) {
 		return
 	}
 
+	// Check if order has already been duplicated
+	if originalOrder.EventStatus != nil && *originalOrder.EventStatus == "old duplicated" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already duplicated", "this order has already been duplicated")
+		return
+	}
+
 	// Begin transaction
 	tx := oc.DB.Begin()
 
@@ -641,8 +647,8 @@ func (oc *OrderController) DuplicateOrder(c *gin.Context) {
 	newTracking := "X-" + originalOrder.Tracking
 
 	// Update original order's order_ginee_id by adding "-X2" suffix and tracking with "X-" prefix
-	// eventStatus := "duplicated"
-	// originalOrder.EventStatus = &eventStatus
+	oldDuplicatedEventStatus := "old duplicated"
+	originalOrder.EventStatus = &oldDuplicatedEventStatus
 	originalOrder.OrderGineeID = originalOrder.OrderGineeID + "-X2"
 	originalOrder.Tracking = newTracking
 	if err := tx.Save(&originalOrder).Error; err != nil {
