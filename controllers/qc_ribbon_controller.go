@@ -55,7 +55,7 @@ func (qrc *QcRibbonController) GetQcRibbons(c *gin.Context) {
 	var total int64
 
 	// Build query with filters
-	query := qrc.DB.Model(&models.QcRibbon{}).Where("user_id = ?", userID).Where("DATE(created_at) = CURRENT_DATE")
+	query := qrc.DB.Model(&models.QcRibbon{}).Where("qc_by = ?", userID).Where("DATE(created_at) = CURRENT_DATE")
 
 	if search != "" {
 		// Search by tracking with partial match
@@ -94,8 +94,7 @@ func (qrc *QcRibbonController) GetQcRibbons(c *gin.Context) {
 		if len(trackingNumbers) > 0 {
 			if err := qrc.DB.Where("tracking IN ?", trackingNumbers).
 				Preload("OrderDetails").
-				Preload("Picker.UserRoles.Role").
-				Preload("Picker.UserRoles.Assigner").
+				Preload("PickOperator").
 				Find(&orders).Error; err == nil {
 
 				for i := range orders {

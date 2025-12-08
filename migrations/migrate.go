@@ -228,7 +228,6 @@ func seedDefaultChannels(db *gorm.DB) {
 // Seed default box data
 func seedDefaultBoxes(db *gorm.DB) {
 	boxes := []models.Box{
-		{Code: "PC", Name: "Packing"},
 		{Code: "1", Name: "001"},
 		{Code: "2", Name: "002"},
 		{Code: "A", Name: "Polos A"},

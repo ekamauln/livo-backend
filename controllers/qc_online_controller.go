@@ -55,7 +55,7 @@ func (qoc *QcOnlineController) GetQcOnlines(c *gin.Context) {
 	var total int64
 
 	// Build query with filters
-	query := qoc.DB.Model(&models.QcOnline{}).Where("user_id = ?", userID).Where("DATE(created_at) = CURRENT_DATE")
+	query := qoc.DB.Model(&models.QcOnline{}).Where("qc_by = ?", userID).Where("DATE(created_at) = CURRENT_DATE")
 
 	if search != "" {
 		// Search by tracking with partial match
