@@ -33,6 +33,7 @@ func AutoMigrate(db *gorm.DB) {
 		&models.Complain{},
 		&models.ComplainProductDetail{},
 		&models.ComplainUserDetail{},
+		&models.LostFound{},
 	)
 	if err != nil {
 		log.Printf("⚠️ Warning: Failed to migrate some tables: %v", err)

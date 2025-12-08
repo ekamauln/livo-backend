@@ -397,6 +397,15 @@ definitions:
       user:
         $ref: '#/definitions/models.UserResponse'
     type: object
+  controllers.LostFoundsListResponse:
+    properties:
+      lost_founds:
+        items:
+          $ref: '#/definitions/models.LostFoundResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
   controllers.MobileBulkAssignPickerRequest:
     properties:
       picker_id:
@@ -1265,6 +1274,31 @@ definitions:
       name:
         type: string
       slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.LostFound:
+    type: object
+  models.LostFoundResponse:
+    properties:
+      create_operator:
+        allOf:
+        - $ref: '#/definitions/models.UserResponse'
+        description: Related data
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      id:
+        type: integer
+      product:
+        $ref: '#/definitions/models.ProductResponse'
+      product_sku:
+        type: string
+      quantity:
+        type: integer
+      reason:
         type: string
       updated_at:
         type: string
@@ -2628,6 +2662,214 @@ paths:
       summary: Update expedition
       tags:
       - expeditions
+  /api/lost-founds:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all lost and found items.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by product sku or reason (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.LostFoundsListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all lost and found items
+      tags:
+      - lost-founds
+    post:
+      consumes:
+      - application/json
+      description: Create a new lost and found item.
+      parameters:
+      - description: Create lost and found request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LostFound'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LostFoundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create new lost and found item
+      tags:
+      - lost-founds
+  /api/lost-founds/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a lost and found item by ID.
+      parameters:
+      - description: Lost and Found ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove a lost and found item by ID
+      tags:
+      - lost-founds
+    get:
+      consumes:
+      - application/json
+      description: Get lost and found item details by ID.
+      parameters:
+      - description: Lost and Found ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LostFoundResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a lost and found item by ID
+      tags:
+      - lost-founds
+    put:
+      consumes:
+      - application/json
+      description: Update lost and found item details by ID.
+      parameters:
+      - description: Lost and Found ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Lost and Found data
+        in: body
+        name: lost_found
+        required: true
+        schema:
+          $ref: '#/definitions/models.LostFound'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LostFoundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a lost and found item by ID
+      tags:
+      - lost-founds
   /api/mobile/channels:
     get:
       consumes:
