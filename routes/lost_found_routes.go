@@ -14,9 +14,10 @@ func SetupLostFoundRoutes(api *gin.RouterGroup, cfg *config.Config, lostFoundCon
 	lostFound := api.Group("/lost-founds")
 	lostFound.Use(middleware.AuthMiddleware(cfg))
 	{
-		lostFound.POST("/", lostFoundController.CreateLostFound)
+		// Public lost and found routes
 		lostFound.GET("/", lostFoundController.GetLostFounds)
 		lostFound.GET("/:id", lostFoundController.GetLostFound)
+		lostFound.POST("/", lostFoundController.CreateLostFound)
 		lostFound.PUT("/:id", lostFoundController.UpdateLostFound)
 		lostFound.DELETE("/:id", lostFoundController.RemoveLostFound)
 	}

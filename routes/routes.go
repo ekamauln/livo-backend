@@ -21,12 +21,8 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 
 	router := gin.Default()
 
-	// CORS middleware
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = true
-	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization")
-	router.Use(cors.New(corsConfig))
-	corsConfig = cors.Config{
+	// CORS middleware - single unified configuration
+	corsConfig := cors.Config{
 		AllowOrigins: strings.Split(cfg.CORSAllowedOrigins, ","),
 		AllowMethods: strings.Split(cfg.CORSAllowedMethods, ","),
 		AllowHeaders: []string{
@@ -42,8 +38,16 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 			"Content-Type",
 		},
 		AllowCredentials: true,
+		AllowAllOrigins:  false,
 		MaxAge:           12 * time.Hour,
 	}
+
+	// If no origins configured, allow all
+	if cfg.CORSAllowedOrigins == "" || cfg.CORSAllowedOrigins == "*" {
+		corsConfig.AllowAllOrigins = true
+		corsConfig.AllowOrigins = nil
+	}
+
 	router.Use(cors.New(corsConfig))
 
 	// Set trusted proxies for security
