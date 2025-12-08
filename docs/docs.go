@@ -1736,7 +1736,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.LostFound"
+                            "$ref": "#/definitions/controllers.CreateLostFoundRequest"
                         }
                     }
                 ],
@@ -1877,7 +1877,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.LostFound"
+                            "$ref": "#/definitions/controllers.UpdateLostFoundRequest"
                         }
                     }
                 ],
@@ -6950,6 +6950,26 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.CreateLostFoundRequest": {
+            "type": "object",
+            "required": [
+                "product_sku",
+                "quantity",
+                "reason"
+            ],
+            "properties": {
+                "product_sku": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.CreateMobileReturnRequest": {
             "type": "object",
             "required": [
@@ -8145,6 +8165,26 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.UpdateLostFoundRequest": {
+            "type": "object",
+            "required": [
+                "product_sku",
+                "quantity",
+                "reason"
+            ],
+            "properties": {
+                "product_sku": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.UpdateOrderDetailRequest": {
             "type": "object",
             "required": [
@@ -8597,9 +8637,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "models.LostFound": {
-            "type": "object"
         },
         "models.LostFoundResponse": {
             "type": "object",

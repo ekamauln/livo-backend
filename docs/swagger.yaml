@@ -169,6 +169,20 @@ definitions:
     - name
     - slug
     type: object
+  controllers.CreateLostFoundRequest:
+    properties:
+      product_sku:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      reason:
+        type: string
+    required:
+    - product_sku
+    - quantity
+    - reason
+    type: object
   controllers.CreateMobileReturnRequest:
     properties:
       channel_id:
@@ -975,6 +989,20 @@ definitions:
     - name
     - slug
     type: object
+  controllers.UpdateLostFoundRequest:
+    properties:
+      product_sku:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      reason:
+        type: string
+    required:
+    - product_sku
+    - quantity
+    - reason
+    type: object
   controllers.UpdateOrderDetailRequest:
     properties:
       id:
@@ -1277,8 +1305,6 @@ definitions:
         type: string
       updated_at:
         type: string
-    type: object
-  models.LostFound:
     type: object
   models.LostFoundResponse:
     properties:
@@ -2717,7 +2743,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.LostFound'
+          $ref: '#/definitions/controllers.CreateLostFoundRequest'
       produces:
       - application/json
       responses:
@@ -2836,7 +2862,7 @@ paths:
         name: lost_found
         required: true
         schema:
-          $ref: '#/definitions/models.LostFound'
+          $ref: '#/definitions/controllers.UpdateLostFoundRequest'
       produces:
       - application/json
       responses:

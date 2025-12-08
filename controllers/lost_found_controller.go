@@ -122,7 +122,7 @@ func (lfc *LostFoundController) GetLostFound(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Lost and Found ID"
-// @Param lost_found body models.LostFound true "Lost and Found data"
+// @Param lost_found body UpdateLostFoundRequest true "Lost and Found data"
 // @Success 200 {object} utilities.Response{data=models.LostFoundResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
@@ -200,7 +200,7 @@ func (lfc *LostFoundController) RemoveLostFound(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body models.LostFound true "Create lost and found request"
+// @Param request body CreateLostFoundRequest true "Create lost and found request"
 // @Success 201 {object} utilities.Response{data=models.LostFoundResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
@@ -208,7 +208,7 @@ func (lfc *LostFoundController) RemoveLostFound(c *gin.Context) {
 // @Router /api/lost-founds [post]
 func (lfc *LostFoundController) CreateLostFound(c *gin.Context) {
 	// Get user ID from JWT token
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		utilities.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User ID not found in token")
 		return

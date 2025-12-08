@@ -47,7 +47,7 @@ func SetupRoutes(cfg *config.Config, authController *controllers.AuthController,
 	router.Use(cors.New(corsConfig))
 
 	// Set trusted proxies for security
-	router.SetTrustedProxies([]string{"127.0.0.1", "192.168.31.52", "192.168.31.53", "192.168.31.54", "192.168.31.55", "::1"})
+	router.SetTrustedProxies([]string{"localhost:3000", "127.0.0.1", "192.168.31.52", "192.168.31.53", "192.168.31.54", "192.168.31.55", "::1"})
 
 	// Serve static files from static directory
 	router.Static("/static", "./static")
