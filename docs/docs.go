@@ -5342,7 +5342,74 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/ribbons/ribbon-flow": {
+        "/api/ribbons/ribbon-flow/{tracking}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the complete flow tracking through ribbon process (qc-ribbon -\u003e outbound -\u003e order).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ribbons"
+                ],
+                "summary": "Get ribbon flow tracking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracking number",
+                        "name": "tracking",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.RibbonFlowResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/ribbons/ribbon-flows": {
             "get": {
                 "security": [
                     {
@@ -5427,73 +5494,6 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/ribbons/ribbon-flow/{tracking}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get the complete flow tracking through ribbon process (qc-ribbon -\u003e outbound -\u003e order).",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ribbons"
-                ],
-                "summary": "Get ribbon flow tracking",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tracking number",
-                        "name": "tracking",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utilities.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/controllers.RibbonFlowResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/utilities.Response"
                         }

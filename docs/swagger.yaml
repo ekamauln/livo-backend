@@ -4962,7 +4962,48 @@ paths:
       summary: Get qc-ribbon counts per day for current month
       tags:
       - ribbons
-  /api/ribbons/ribbon-flow:
+  /api/ribbons/ribbon-flow/{tracking}:
+    get:
+      consumes:
+      - application/json
+      description: Get the complete flow tracking through ribbon process (qc-ribbon
+        -> outbound -> order).
+      parameters:
+      - description: Tracking number
+        in: path
+        name: tracking
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.RibbonFlowResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get ribbon flow tracking
+      tags:
+      - ribbons
+  /api/ribbons/ribbon-flows:
     get:
       consumes:
       - application/json
@@ -5018,47 +5059,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get all ribbon flows
-      tags:
-      - ribbons
-  /api/ribbons/ribbon-flow/{tracking}:
-    get:
-      consumes:
-      - application/json
-      description: Get the complete flow tracking through ribbon process (qc-ribbon
-        -> outbound -> order).
-      parameters:
-      - description: Tracking number
-        in: path
-        name: tracking
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/controllers.RibbonFlowResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Get ribbon flow tracking
       tags:
       - ribbons
   /api/stores:

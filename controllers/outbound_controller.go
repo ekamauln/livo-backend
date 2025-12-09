@@ -88,9 +88,16 @@ func (oc *OutboundController) GetOutbounds(c *gin.Context) {
 			var order models.Order
 			if err := oc.DB.Where("tracking = ?", outbounds[i].Tracking).
 				Preload("OrderDetails").
-				Preload("Picker.UserRoles.Role").
-				Preload("Picker.UserRoles.Assigner").
+				Preload("PickOperator.UserRoles.Role").
+				Preload("PickOperator.UserRoles.Assigner").
 				First(&order).Error; err == nil {
+				// Manually fetch and attach products to order details
+				for j := range order.OrderDetails {
+					var product models.Product
+					if err := oc.DB.Where("sku = ?", order.OrderDetails[j].Sku).First(&product).Error; err == nil {
+						order.OrderDetails[j].Product = &product
+					}
+				}
 				outbounds[i].Order = &order
 			}
 		}
@@ -149,9 +156,16 @@ func (oc *OutboundController) GetOutbound(c *gin.Context) {
 		var order models.Order
 		if err := oc.DB.Where("tracking = ?", outbound.Tracking).
 			Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			First(&order).Error; err == nil {
+			// Manually fetch and attach products to order details
+			for i := range order.OrderDetails {
+				var product models.Product
+				if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+					order.OrderDetails[i].Product = &product
+				}
+			}
 			outbound.Order = &order
 		}
 	}
@@ -212,9 +226,16 @@ func (oc *OutboundController) UpdateOutbound(c *gin.Context) {
 		var order models.Order
 		if err := oc.DB.Where("tracking = ?", outbound.Tracking).
 			Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			First(&order).Error; err == nil {
+			// Manually fetch and attach products to order details
+			for i := range order.OrderDetails {
+				var product models.Product
+				if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+					order.OrderDetails[i].Product = &product
+				}
+			}
 			outbound.Order = &order
 		}
 	}
@@ -353,9 +374,16 @@ func (oc *OutboundController) CreateOutbound(c *gin.Context) {
 		var order models.Order
 		if err := oc.DB.Where("tracking = ?", outbound.Tracking).
 			Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			First(&order).Error; err == nil {
+			// Manually fetch and attach products to order details
+			for i := range order.OrderDetails {
+				var product models.Product
+				if err := oc.DB.Where("sku = ?", order.OrderDetails[i].Sku).First(&product).Error; err == nil {
+					order.OrderDetails[i].Product = &product
+				}
+			}
 			outbound.Order = &order
 		}
 	}

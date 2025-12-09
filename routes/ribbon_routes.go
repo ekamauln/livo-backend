@@ -25,7 +25,7 @@ func SetupQcRibbonRoutes(api *gin.RouterGroup, cfg *config.Config, qcRibbonContr
 // SetupRibbonFlowRoutes configures ribbon flow-related routes
 func SetupRibbonFlowRoutes(api *gin.RouterGroup, cfg *config.Config, ribbonFlowController *controllers.RibbonFlowController) {
 	// Ribbon flow routes (authenticated)
-	ribbonFlow := api.Group("/ribbons/ribbon-flow")
+	ribbonFlow := api.Group("/ribbons/ribbon-flows")
 	ribbonFlow.Use(middleware.AuthMiddleware(cfg))
 	{
 		// Public ribbon flow routes

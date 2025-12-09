@@ -38,7 +38,7 @@ func NewRibbonFlowController(db *gorm.DB) *RibbonFlowController {
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
-// @Router /api/ribbons/ribbon-flow [get]
+// @Router /api/ribbons/ribbon-flows [get]
 func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
