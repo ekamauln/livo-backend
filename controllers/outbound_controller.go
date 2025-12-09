@@ -54,9 +54,9 @@ func (oc *OutboundController) GetOutbounds(c *gin.Context) {
 	var outbounds []models.Outbound
 	var total int64
 
-	// Build query with user_id and current date filters
+	// Build query with outbound_by and current date filters
 	query := oc.DB.Model(&models.Outbound{}).
-		Where("user_id = ?", userID).
+		Where("outbound_by = ?", userID).
 		Where("DATE(created_at) = CURRENT_DATE")
 
 	if search != "" {
@@ -72,8 +72,8 @@ func (oc *OutboundController) GetOutbounds(c *gin.Context) {
 
 	// Get outbounds with pagination, search filter, and order by ID descending
 	if err := query.
-		Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+		Preload("OutboundOperator.UserRoles.Role").
+		Preload("OutboundOperator.UserRoles.Assigner").
 		Order("id DESC").
 		Limit(limit).
 		Offset(offset).
@@ -184,8 +184,8 @@ func (oc *OutboundController) UpdateOutbound(c *gin.Context) {
 	}
 
 	var outbound models.Outbound
-	if err := oc.DB.Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	if err := oc.DB.Preload("OutboundOperator.UserRoles.Role").
+		Preload("OutboundOperator.UserRoles.Assigner").
 		First(&outbound, outboundID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Outbound not found", err.Error())
 		return
@@ -344,8 +344,8 @@ func (oc *OutboundController) CreateOutbound(c *gin.Context) {
 	}
 
 	// Load the created outbound with user relationship
-	oc.DB.Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	oc.DB.Preload("OutboundOperator.UserRoles.Role").
+		Preload("OutboundOperator.UserRoles.Assigner").
 		First(&outbound, outbound.ID)
 
 	// Load order data if exists
