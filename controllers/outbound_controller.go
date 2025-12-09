@@ -137,8 +137,8 @@ func (oc *OutboundController) GetOutbound(c *gin.Context) {
 	outboundID := c.Param("id")
 
 	var outbound models.Outbound
-	if err := oc.DB.Preload("User.UserRoles.Role").
-		Preload("User.UserRoles.Assigner").
+	if err := oc.DB.Preload("OutboundOperator.UserRoles.Role").
+		Preload("OutboundOperator.UserRoles.Assigner").
 		First(&outbound, outboundID).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusNotFound, "Outbound not found", err.Error())
 		return
