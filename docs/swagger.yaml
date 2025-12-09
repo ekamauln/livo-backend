@@ -198,6 +198,10 @@ definitions:
     type: object
   controllers.CreateOrderDetailRequest:
     properties:
+      price:
+        example: 10000
+        minimum: 0
+        type: integer
       product_name:
         example: Sample Product
         type: string
@@ -212,6 +216,7 @@ definitions:
         example: Red - Size M
         type: string
     required:
+    - price
     - product_name
     - quantity
     - sku
@@ -473,6 +478,8 @@ definitions:
         type: string
       location:
         type: string
+      price:
+        type: integer
       product:
         allOf:
         - $ref: '#/definitions/models.ProductResponse'
@@ -1009,6 +1016,10 @@ definitions:
         description: 0 for new product, existing ID for update
         example: 1
         type: integer
+      price:
+        example: 10000
+        minimum: 0
+        type: integer
       product_name:
         example: Sample Product
         type: string
@@ -1023,6 +1034,7 @@ definitions:
         example: Red - Size M
         type: string
     required:
+    - price
     - product_name
     - quantity
     - sku
@@ -1353,6 +1365,8 @@ definitions:
   models.OrderDetailResponse:
     properties:
       id:
+        type: integer
+      price:
         type: integer
       product:
         allOf:

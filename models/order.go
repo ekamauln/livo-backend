@@ -49,6 +49,7 @@ type OrderDetail struct {
 	ProductName string    `json:"product_name"`
 	Variant     string    `json:"variant"`
 	Quantity    int       `json:"quantity"`
+	Price       int       `json:"price"`
 	Product     *Product  `json:"product,omitempty" gorm:"-"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -91,6 +92,7 @@ type OrderDetailResponse struct {
 	ProductName string `json:"product_name"`
 	Variant     string `json:"variant"`
 	Quantity    int    `json:"quantity"`
+	Price       int    `json:"price"`
 
 	// Related data
 	Product *ProductResponse `json:"product,omitempty"`
@@ -106,6 +108,7 @@ func (o *Order) ToOrderResponse() OrderResponse {
 			ProductName: detail.ProductName,
 			Variant:     detail.Variant,
 			Quantity:    detail.Quantity,
+			Price:       detail.Price,
 		}
 
 		// Include product data if exists

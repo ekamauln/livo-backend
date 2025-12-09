@@ -6992,11 +6992,17 @@ const docTemplate = `{
         "controllers.CreateOrderDetailRequest": {
             "type": "object",
             "required": [
+                "price",
                 "product_name",
                 "quantity",
                 "sku"
             ],
             "properties": {
+                "price": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 10000
+                },
                 "product_name": {
                     "type": "string",
                     "example": "Sample Product"
@@ -7388,6 +7394,9 @@ const docTemplate = `{
                 },
                 "location": {
                     "type": "string"
+                },
+                "price": {
+                    "type": "integer"
                 },
                 "product": {
                     "description": "Related data",
@@ -8188,6 +8197,7 @@ const docTemplate = `{
         "controllers.UpdateOrderDetailRequest": {
             "type": "object",
             "required": [
+                "price",
                 "product_name",
                 "quantity",
                 "sku"
@@ -8197,6 +8207,11 @@ const docTemplate = `{
                     "description": "0 for new product, existing ID for update",
                     "type": "integer",
                     "example": 1
+                },
+                "price": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 10000
                 },
                 "product_name": {
                     "type": "string",
@@ -8713,6 +8728,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
+                    "type": "integer"
+                },
+                "price": {
                     "type": "integer"
                 },
                 "product": {

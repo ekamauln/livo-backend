@@ -329,6 +329,7 @@ func (oc *OrderController) BulkCreateOrders(c *gin.Context) {
 				ProductName: detailReq.ProductName,
 				Variant:     detailReq.Variant,
 				Quantity:    detailReq.Quantity,
+				Price:       detailReq.Price,
 			}
 			order.OrderDetails = append(order.OrderDetails, orderDetail)
 		}
@@ -498,6 +499,7 @@ func (oc *OrderController) UpdateOrder(c *gin.Context) {
 				ProductName: detailReq.ProductName,
 				Variant:     detailReq.Variant,
 				Quantity:    detailReq.Quantity,
+				Price:       detailReq.Price,
 			}
 			if err := tx.Create(&newDetail).Error; err != nil {
 				tx.Rollback()
@@ -511,6 +513,7 @@ func (oc *OrderController) UpdateOrder(c *gin.Context) {
 				existingDetail.ProductName = detailReq.ProductName
 				existingDetail.Variant = detailReq.Variant
 				existingDetail.Quantity = detailReq.Quantity
+				existingDetail.Price = detailReq.Price
 
 				if err := tx.Save(&existingDetail).Error; err != nil {
 					tx.Rollback()
@@ -712,6 +715,7 @@ func (oc *OrderController) DuplicateOrder(c *gin.Context) {
 			ProductName: detail.ProductName,
 			Variant:     detail.Variant,
 			Quantity:    detail.Quantity,
+			Price:       detail.Price,
 		}
 		if err := tx.Create(&duplicatedDetail).Error; err != nil {
 			tx.Rollback()
@@ -1248,6 +1252,7 @@ type CreateOrderDetailRequest struct {
 	ProductName string `json:"product_name" binding:"required" example:"Sample Product"`
 	Variant     string `json:"variant" example:"Red - Size M"`
 	Quantity    int    `json:"quantity" binding:"required,min=1" example:"2"`
+	Price       int    `json:"price" binding:"required,min=0" example:"10000"`
 }
 
 type BulkCreateOrderRequest struct {
@@ -1298,6 +1303,7 @@ type UpdateOrderDetailRequest struct {
 	ProductName string `json:"product_name" binding:"required" example:"Sample Product"`
 	Variant     string `json:"variant" example:"Red - Size M"`
 	Quantity    int    `json:"quantity" binding:"required,min=1" example:"2"`
+	Price       int    `json:"price" binding:"required,min=0" example:"10000"`
 }
 
 type DuplicateOrderResponse struct {
