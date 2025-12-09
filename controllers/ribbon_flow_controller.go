@@ -153,7 +153,7 @@ func (rfc *RibbonFlowController) GetRibbonFlows(c *gin.Context) {
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/ribbons/ribbon-flow/{tracking} [get]
+// @Router /api/ribbons/ribbon-flows/{tracking} [get]
 func (rfc *RibbonFlowController) GetRibbonFlow(c *gin.Context) {
 	tracking := c.Param("tracking")
 
@@ -180,7 +180,7 @@ func (rfc *RibbonFlowController) buildRibbonFlow(tracking string) RibbonFlowResp
 
 	// 1. Query QC Ribbon (PRIMARY SOURCE)
 	var qcRibbon models.QcRibbon
-	if err := rfc.DB.Preload("User").Where("tracking = ?", tracking).First(&qcRibbon).Error; err == nil {
+	if err := rfc.DB.Preload("QcOperator").Where("tracking = ?", tracking).First(&qcRibbon).Error; err == nil {
 		var operator *RibbonOperatorFlowInfo
 		if qcRibbon.QcOperator != nil {
 			operator = &RibbonOperatorFlowInfo{
@@ -198,7 +198,7 @@ func (rfc *RibbonFlowController) buildRibbonFlow(tracking string) RibbonFlowResp
 
 	// 2. Query Outbound
 	var outbound models.Outbound
-	if err := rfc.DB.Preload("User").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
+	if err := rfc.DB.Preload("OutboundOperator").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
 		var operator *RibbonOperatorFlowInfo
 		if outbound.OutboundOperator != nil {
 			operator = &RibbonOperatorFlowInfo{
