@@ -364,6 +364,12 @@ func (oc *OutboundController) CreateOutbound(c *gin.Context) {
 		return
 	}
 
+	// Update order processing_status to "outbound completed"
+	if err := oc.DB.Model(&models.Order{}).Where("tracking = ?", req.Tracking).Update("processing_status", "outbound completed").Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order status", err.Error())
+		return
+	}
+
 	// Load the created outbound with user relationship
 	oc.DB.Preload("OutboundOperator.UserRoles.Role").
 		Preload("OutboundOperator.UserRoles.Assigner").

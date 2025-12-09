@@ -180,7 +180,7 @@ func (ofc *OnlineFlowController) buildOnlineFlow(tracking string) OnlineFlowResp
 
 	// 1. Query QC Online (PRIMARY SOURCE)
 	var qcOnline models.QcOnline
-	if err := ofc.DB.Preload("User").Where("tracking = ?", tracking).First(&qcOnline).Error; err == nil {
+	if err := ofc.DB.Preload("QcOperator.UserRoles.Role").Preload("QcOperator.UserRoles.Assigner").Where("tracking = ?", tracking).First(&qcOnline).Error; err == nil {
 		var operator *OnlineOperatorFlowInfo
 		if qcOnline.QcOperator != nil {
 			operator = &OnlineOperatorFlowInfo{
@@ -198,7 +198,7 @@ func (ofc *OnlineFlowController) buildOnlineFlow(tracking string) OnlineFlowResp
 
 	// 2. Query Outbound
 	var outbound models.Outbound
-	if err := ofc.DB.Preload("User").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
+	if err := ofc.DB.Preload("OutboundOperator.UserRoles.Role").Preload("OutboundOperator.UserRoles.Assigner").Where("tracking = ?", tracking).First(&outbound).Error; err == nil {
 		var operator *OnlineOperatorFlowInfo
 		if outbound.OutboundOperator != nil {
 			operator = &OnlineOperatorFlowInfo{
@@ -220,10 +220,11 @@ func (ofc *OnlineFlowController) buildOnlineFlow(tracking string) OnlineFlowResp
 	var order models.Order
 	if err := ofc.DB.Where("tracking = ?", tracking).First(&order).Error; err == nil {
 		response.Order = &OnlineOrderFlowInfo{
-			Tracking:     order.Tracking,
-			OrderGineeID: order.OrderGineeID,
-			Complained:   order.Complained,
-			CreatedAt:    order.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			Tracking:         order.Tracking,
+			ProcessingStatus: order.ProcessingStatus,
+			OrderGineeID:     order.OrderGineeID,
+			Complained:       order.Complained,
+			CreatedAt:        order.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 
@@ -250,10 +251,11 @@ type QcOnlineFlowInfo struct {
 }
 
 type OnlineOrderFlowInfo struct {
-	Tracking     string `json:"tracking"`
-	OrderGineeID string `json:"order_ginee_id"`
-	Complained   bool   `json:"complained"`
-	CreatedAt    string `json:"created_at"`
+	Tracking         string `json:"tracking"`
+	ProcessingStatus string `json:"processing_status"`
+	OrderGineeID     string `json:"order_ginee_id"`
+	Complained       bool   `json:"complained"`
+	CreatedAt        string `json:"created_at"`
 }
 
 type OnlineOutboundFlowInfo struct {

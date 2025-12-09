@@ -93,8 +93,8 @@ func (qoc *QcOnlineController) GetQcOnlines(c *gin.Context) {
 		if len(trackingNumbers) > 0 {
 			if err := qoc.DB.Where("tracking IN ?", trackingNumbers).
 				Preload("OrderDetails").
-				Preload("Picker.UserRoles.Role").
-				Preload("Picker.UserRoles.Assigner").
+				Preload("PickOperator.UserRoles.Role").
+				Preload("PickOperator.UserRoles.Assigner").
 				Find(&orders).Error; err == nil {
 
 				for i := range orders {

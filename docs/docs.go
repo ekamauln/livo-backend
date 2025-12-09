@@ -7988,6 +7988,9 @@ const docTemplate = `{
                 "order_ginee_id": {
                     "type": "string"
                 },
+                "processing_status": {
+                    "type": "string"
+                },
                 "tracking": {
                     "type": "string"
                 }
