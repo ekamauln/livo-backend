@@ -220,10 +220,11 @@ func (rfc *RibbonFlowController) buildRibbonFlow(tracking string) RibbonFlowResp
 	var order models.Order
 	if err := rfc.DB.Where("tracking = ?", tracking).First(&order).Error; err == nil {
 		response.Order = &RibbonOrderFlowInfo{
-			Tracking:     order.Tracking,
-			OrderGineeID: order.OrderGineeID,
-			Complained:   order.Complained,
-			CreatedAt:    order.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			Tracking:         order.Tracking,
+			ProcessingStatus: order.ProcessingStatus,
+			OrderGineeID:     order.OrderGineeID,
+			Complained:       order.Complained,
+			CreatedAt:        order.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 
@@ -271,10 +272,11 @@ type RibbonOutboundFlowInfo struct {
 }
 
 type RibbonOrderFlowInfo struct {
-	Tracking     string `json:"tracking"`
-	OrderGineeID string `json:"order_ginee_id"`
-	Complained   bool   `json:"complained"`
-	CreatedAt    string `json:"created_at"`
+	Tracking         string `json:"tracking"`
+	ProcessingStatus string `json:"processing_status"`
+	OrderGineeID     string `json:"order_ginee_id"`
+	Complained       bool   `json:"complained"`
+	CreatedAt        string `json:"created_at"`
 }
 
 type RibbonOperatorFlowInfo struct {
