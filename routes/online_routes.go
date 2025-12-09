@@ -25,7 +25,7 @@ func SetupQcOnlineRoutes(api *gin.RouterGroup, cfg *config.Config, qcOnlineContr
 // SetupOnlineFlowRoutes configures online-flow-related routes
 func SetupOnlineFlowRoutes(api *gin.RouterGroup, cfg *config.Config, onlineFlowController *controllers.OnlineFlowController) {
 	// Online-flow routes (authenticated)
-	onlineFlow := api.Group("/onlines/online-flow")
+	onlineFlow := api.Group("/onlines/online-flows")
 	onlineFlow.Use(middleware.AuthMiddleware(cfg))
 	{
 		// Public online-flow routes

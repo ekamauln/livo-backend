@@ -2655,7 +2655,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/onlines/online-flow": {
+        "/api/onlines/online-flows": {
             "get": {
                 "security": [
                     {
@@ -2747,7 +2747,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/onlines/online-flow/{tracking}": {
+        "/api/onlines/online-flows/{tracking}": {
             "get": {
                 "security": [
                     {
@@ -7591,6 +7591,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "order_ginee_id": {
+                    "type": "string"
+                },
+                "processing_status": {
                     "type": "string"
                 },
                 "tracking": {

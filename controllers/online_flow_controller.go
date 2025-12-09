@@ -38,7 +38,7 @@ func NewOnlineFlowController(db *gorm.DB) *OnlineFlowController {
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
-// @Router /api/onlines/online-flow [get]
+// @Router /api/onlines/online-flows [get]
 func (ofc *OnlineFlowController) GetOnlineFlows(c *gin.Context) {
 	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -153,7 +153,7 @@ func (ofc *OnlineFlowController) GetOnlineFlows(c *gin.Context) {
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/onlines/online-flow/{tracking} [get]
+// @Router /api/onlines/online-flows/{tracking} [get]
 func (ofc *OnlineFlowController) GetOnlineFlow(c *gin.Context) {
 	tracking := c.Param("tracking")
 
