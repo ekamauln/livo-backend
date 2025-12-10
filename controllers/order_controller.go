@@ -868,17 +868,14 @@ func (oc *OrderController) CancelOrder(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path int true "Order ID to assign picker"
 // @Param request body AssignPickerRequest true "Assign picker request"
 // @Success 200 {object} utilities.Response{data=models.OrderResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
 // @Failure 403 {object} utilities.Response
 // @Failure 404 {object} utilities.Response
-// @Router /api/orders/{id}/assign-picker [put]
+// @Router /api/orders/assign-picker [post]
 func (oc *OrderController) AssignPicker(c *gin.Context) {
-	orderID := c.Param("id")
-
 	var req AssignPickerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utilities.ValidationErrorResponse(c, err)
@@ -909,11 +906,11 @@ func (oc *OrderController) AssignPicker(c *gin.Context) {
 		return
 	}
 
-	// Find the order
+	// Find the order by tracking
 	var order models.Order
-	if err := oc.DB.First(&order, orderID).Error; err != nil {
+	if err := oc.DB.Where("tracking = ?", req.Tracking).First(&order).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified ID")
+			utilities.ErrorResponse(c, http.StatusNotFound, "Order not found", "no order found with the specified tracking number")
 			return
 		}
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to find order", err.Error())
@@ -1309,5 +1306,6 @@ type DuplicateOrderResponse struct {
 }
 
 type AssignPickerRequest struct {
-	PickerID uint `json:"picker_id" binding:"required" example:"1"`
+	PickerID uint   `json:"picker_id" binding:"required" example:"1"`
+	Tracking string `json:"tracking" binding:"required" example:"JNE1234567890"`
 }

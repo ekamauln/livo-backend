@@ -5,8 +5,12 @@ definitions:
       picker_id:
         example: 1
         type: integer
+      tracking:
+        example: JNE1234567890
+        type: string
     required:
     - picker_id
+    - tracking
     type: object
   controllers.AssignRoleRequest:
     properties:
@@ -3736,58 +3740,6 @@ paths:
       summary: Update order and order details
       tags:
       - orders
-  /api/orders/{id}/assign-picker:
-    put:
-      consumes:
-      - application/json
-      description: Assign a picker to an order, setting assigned_by to current user,
-        assigned_at to now, picked_by to specified picker, and processing_status to
-        "picking process"
-      parameters:
-      - description: Order ID to assign picker
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Assign picker request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.AssignPickerRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.OrderResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Assign a picker to an order
-      tags:
-      - orders
   /api/orders/{id}/cancel:
     put:
       consumes:
@@ -4062,6 +4014,53 @@ paths:
       security:
       - BearerAuth: []
       summary: Change operation status order to "qc process"
+      tags:
+      - orders
+  /api/orders/assign-picker:
+    post:
+      consumes:
+      - application/json
+      description: Assign a picker to an order, setting assigned_by to current user,
+        assigned_at to now, picked_by to specified picker, and processing_status to
+        "picking process"
+      parameters:
+      - description: Assign picker request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AssignPickerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.OrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Assign a picker to an order
       tags:
       - orders
   /api/orders/assigned:

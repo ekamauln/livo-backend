@@ -38,7 +38,7 @@ func SetupOrderRoutes(api *gin.RouterGroup, cfg *config.Config, orderController 
 	{
 		orderCoordinator.PUT("/:id/pending-pick", orderController.PendingPickOrders) // Pending an picked orders
 		orderCoordinator.GET("/assigned", orderController.GetAssignedOrders)         // Get all assigned orders for current date
-		orderCoordinator.PUT("/:id/assign-picker", orderController.AssignPicker)     // Assign picker to order
+		orderCoordinator.POST("/assign-picker", orderController.AssignPicker)        // Assign picker to order
 	}
 }
 
