@@ -162,19 +162,6 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
-  controllers.CreateBaseReturnRequest:
-    properties:
-      channel_id:
-        type: integer
-      new_tracking:
-        type: string
-      store_id:
-        type: integer
-    required:
-    - channel_id
-    - new_tracking
-    - store_id
-    type: object
   controllers.CreateBoxRequest:
     properties:
       code:
@@ -379,6 +366,32 @@ definitions:
     required:
     - details
     - tracking
+    type: object
+  controllers.CreateReturnRequest:
+    properties:
+      channel_id:
+        type: integer
+      new_tracking:
+        type: string
+      old_tracking:
+        type: string
+      return_number:
+        type: string
+      return_reason:
+        type: string
+      return_type:
+        type: string
+      scrap_number:
+        type: string
+      store_id:
+        type: integer
+    required:
+    - channel_id
+    - new_tracking
+    - old_tracking
+    - return_reason
+    - return_type
+    - store_id
     type: object
   controllers.CreateStoreRequest:
     properties:
@@ -984,25 +997,6 @@ definitions:
           $ref: '#/definitions/models.StoreResponse'
         type: array
     type: object
-  controllers.UpdateAdminReturnRequest:
-    properties:
-      old_tracking:
-        type: string
-      return_number:
-        type: string
-      return_reason:
-        type: string
-      return_type:
-        type: string
-      scrap_number:
-        type: string
-    required:
-    - old_tracking
-    - return_number
-    - return_reason
-    - return_type
-    - scrap_number
-    type: object
   controllers.UpdateBoxRequest:
     properties:
       code:
@@ -1037,19 +1031,6 @@ definitions:
         type: boolean
     required:
     - complained
-    type: object
-  controllers.UpdateDataReturnRequest:
-    properties:
-      old_tracking:
-        type: string
-      return_reason:
-        type: string
-      return_type:
-        type: string
-    required:
-    - old_tracking
-    - return_reason
-    - return_type
     type: object
   controllers.UpdateExpeditionRequest:
     properties:
@@ -1191,6 +1172,16 @@ definitions:
       password:
         example: newpassword123
         type: string
+    type: object
+  controllers.UpdateReturnRequest:
+    properties:
+      return_number:
+        type: string
+      scrap_number:
+        type: string
+    required:
+    - return_number
+    - scrap_number
     type: object
   controllers.UpdateSolutionComplainRequest:
     properties:
@@ -1661,8 +1652,12 @@ definitions:
         $ref: '#/definitions/models.ChannelResponse'
       channel_id:
         type: integer
+      create_operator:
+        $ref: '#/definitions/models.UserResponse'
       created_at:
         type: string
+      created_by:
+        type: integer
       id:
         type: integer
       new_tracking:
@@ -1691,8 +1686,12 @@ definitions:
         $ref: '#/definitions/models.StoreResponse'
       store_id:
         type: integer
+      update_operator:
+        $ref: '#/definitions/models.UserResponse'
       updated_at:
         type: string
+      updated_by:
+        type: integer
     type: object
   models.Role:
     properties:
@@ -4798,14 +4797,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new base return.
+      description: Create a new return.
       parameters:
-      - description: Create Base Return Request
+      - description: Create Return Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.CreateBaseReturnRequest'
+          $ref: '#/definitions/controllers.CreateReturnRequest'
       produces:
       - application/json
       responses:
@@ -4832,7 +4831,7 @@ paths:
             $ref: '#/definitions/utilities.Response'
       security:
       - BearerAuth: []
-      summary: Create a new base return
+      summary: Create a new return
       tags:
       - returns
   /api/returns/{id}:
@@ -4875,74 +4874,22 @@ paths:
       summary: Get return by ID
       tags:
       - returns
-  /api/returns/{id}/admin:
     put:
       consumes:
       - application/json
-      description: Update return admin data and sync product details from order (logged
-        in users only)
+      description: Update return data.
       parameters:
       - description: Return ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Update Admin Return Request
+      - description: Update Return Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.UpdateAdminReturnRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/utilities.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.ReturnResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utilities.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utilities.Response'
-      security:
-      - BearerAuth: []
-      summary: Update return admin data
-      tags:
-      - returns
-  /api/returns/{id}/data:
-    put:
-      consumes:
-      - application/json
-      description: Update return data and sync product details from order.
-      parameters:
-      - description: Return ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Update Data Return Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.UpdateDataReturnRequest'
+          $ref: '#/definitions/controllers.UpdateReturnRequest'
       produces:
       - application/json
       responses:

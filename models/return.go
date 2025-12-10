@@ -13,6 +13,8 @@ type Return struct {
 	OrderGineeID string         `gorm:"unique" json:"order_ginee_id" example:"2509116GA36VM5"`
 	ChannelID    uint           `gorm:"not null" json:"channel_id"`
 	StoreID      uint           `gorm:"not null" json:"store_id"`
+	CreatedBy    uint           `gorm:"default:null" json:"created_by"`
+	UpdatedBy    *uint          `gorm:"default:null" json:"updated_by"`
 	ReturnType   string         `json:"return_type" example:"Cancelled"`
 	ReturnReason string         `json:"return_reason" example:"Customer cancelled the order"`
 	ReturnNumber string         `json:"return_number" example:"RMA123456"`
@@ -22,10 +24,12 @@ type Return struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Relationship
-	ReturnDetails []ReturnDetail `gorm:"foreignKey:ReturnID" json:"return_details"`
-	Order         *Order         `gorm:"-" json:"order,omitempty"`
-	Channel       *Channel       `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
-	Store         *Store         `gorm:"foreignKey:StoreID" json:"store,omitempty"`
+	ReturnDetails  []ReturnDetail `gorm:"foreignKey:ReturnID" json:"return_details"`
+	Order          *Order         `gorm:"-" json:"order,omitempty"`
+	Channel        *Channel       `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
+	Store          *Store         `gorm:"foreignKey:StoreID" json:"store,omitempty"`
+	CreateOperator *User          `gorm:"foreignKey:CreatedBy" json:"create_operator,omitempty"`
+	UpdateOperator *User          `gorm:"foreignKey:UpdatedBy" json:"update_operator,omitempty"`
 }
 
 type ReturnDetail struct {
@@ -58,6 +62,8 @@ type ReturnResponse struct {
 	NewTracking   string                 `json:"new_tracking"`
 	OldTracking   string                 `json:"old_tracking"`
 	OrderGineeID  string                 `json:"order_ginee_id"`
+	CreatedBy     uint                   `json:"created_by"`
+	UpdatedBy     uint                   `json:"updated_by"`
 	ChannelID     uint                   `json:"channel_id"`
 	StoreID       uint                   `json:"store_id"`
 	ReturnType    string                 `json:"return_type"`
@@ -69,9 +75,11 @@ type ReturnResponse struct {
 	ReturnDetails []ReturnDetailResponse `json:"return_details"`
 
 	// Related data
-	Order   *OrderResponse   `json:"order,omitempty"`
-	Channel *ChannelResponse `json:"channel,omitempty"`
-	Store   *StoreResponse   `json:"store,omitempty"`
+	Order          *OrderResponse   `json:"order,omitempty"`
+	Channel        *ChannelResponse `json:"channel,omitempty"`
+	Store          *StoreResponse   `json:"store,omitempty"`
+	CreateOperator *UserResponse    `json:"create_operator,omitempty"`
+	UpdateOperator *UserResponse    `json:"update_operator,omitempty"`
 }
 
 // MobileReturnResponse is a simplified response for mobile use
@@ -115,6 +123,7 @@ func (r *Return) ToReturnResponse() ReturnResponse {
 		NewTracking:   r.NewTracking,
 		OldTracking:   r.OldTracking,
 		OrderGineeID:  r.OrderGineeID,
+		CreatedBy:     r.CreatedBy,
 		ChannelID:     r.ChannelID,
 		StoreID:       r.StoreID,
 		ReturnType:    r.ReturnType,
@@ -124,6 +133,11 @@ func (r *Return) ToReturnResponse() ReturnResponse {
 		CreatedAt:     r.CreatedAt,
 		UpdatedAt:     r.UpdatedAt,
 		ReturnDetails: detailResponses,
+	}
+
+	// Handle UpdatedBy (nullable field)
+	if r.UpdatedBy != nil {
+		response.UpdatedBy = *r.UpdatedBy
 	}
 
 	// Include order data if loaded (this will include OrderGineeID)
@@ -142,6 +156,18 @@ func (r *Return) ToReturnResponse() ReturnResponse {
 	if r.Store != nil {
 		storeResponse := r.Store.ToStoreResponse()
 		response.Store = &storeResponse
+	}
+
+	// Include create operator data if loaded
+	if r.CreateOperator != nil {
+		createOperatorResponse := r.CreateOperator.ToUserResponse()
+		response.CreateOperator = &createOperatorResponse
+	}
+
+	// Include update operator data if loaded
+	if r.UpdateOperator != nil {
+		updateOperatorResponse := r.UpdateOperator.ToUserResponse()
+		response.UpdateOperator = &updateOperatorResponse
 	}
 
 	return response

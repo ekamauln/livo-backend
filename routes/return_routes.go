@@ -15,12 +15,10 @@ func SetupReturnRoutes(api *gin.RouterGroup, cfg *config.Config, returnControlle
 	returns.Use(middleware.AuthMiddleware(cfg))
 	{
 		// Public return routes
-		returns.POST("", returnController.CreateBaseReturn)
-		returns.GET("", returnController.GetReturns)                  // Get all returns (with optional search and date filtering)
-		returns.GET("/:id", returnController.GetReturn)               // Get return by ID
-		returns.PUT("/:id/data", returnController.UpdateDataReturn)   // Update partial data return for normal admins
-		returns.PUT("/:id/admin", returnController.UpdateAdminReturn) // Update full return for return admins
-
+		returns.POST("", returnController.CreateReturn)
+		returns.GET("", returnController.GetReturns)           // Get all returns (with optional search and date filtering)
+		returns.GET("/:id", returnController.GetReturn)        // Get return by ID
+		returns.PUT("/:id", returnController.UpdateDataReturn) // Update partial data return for return admins
 	}
 }
 

@@ -4947,7 +4947,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new base return.",
+                "description": "Create a new return.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4957,15 +4957,15 @@ const docTemplate = `{
                 "tags": [
                     "returns"
                 ],
-                "summary": "Create a new base return",
+                "summary": "Create a new return",
                 "parameters": [
                     {
-                        "description": "Create Base Return Request",
+                        "description": "Create Return Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.CreateBaseReturnRequest"
+                            "$ref": "#/definitions/controllers.CreateReturnRequest"
                         }
                     }
                 ],
@@ -5074,98 +5074,14 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/returns/{id}/admin": {
+            },
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update return admin data and sync product details from order (logged in users only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "returns"
-                ],
-                "summary": "Update return admin data",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Return ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update Admin Return Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.UpdateAdminReturnRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utilities.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.ReturnResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/utilities.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/returns/{id}/data": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update return data and sync product details from order.",
+                "description": "Update return data.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5185,12 +5101,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Update Data Return Request",
+                        "description": "Update Return Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.UpdateDataReturnRequest"
+                            "$ref": "#/definitions/controllers.UpdateReturnRequest"
                         }
                     }
                 ],
@@ -7110,25 +7026,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.CreateBaseReturnRequest": {
-            "type": "object",
-            "required": [
-                "channel_id",
-                "new_tracking",
-                "store_id"
-            ],
-            "properties": {
-                "channel_id": {
-                    "type": "integer"
-                },
-                "new_tracking": {
-                    "type": "string"
-                },
-                "store_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "controllers.CreateBoxRequest": {
             "type": "object",
             "required": [
@@ -7417,6 +7314,43 @@ const docTemplate = `{
                 "tracking": {
                     "type": "string",
                     "example": "250925AASB6BSDJUI3C"
+                }
+            }
+        },
+        "controllers.CreateReturnRequest": {
+            "type": "object",
+            "required": [
+                "channel_id",
+                "new_tracking",
+                "old_tracking",
+                "return_reason",
+                "return_type",
+                "store_id"
+            ],
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "new_tracking": {
+                    "type": "string"
+                },
+                "old_tracking": {
+                    "type": "string"
+                },
+                "return_number": {
+                    "type": "string"
+                },
+                "return_reason": {
+                    "type": "string"
+                },
+                "return_type": {
+                    "type": "string"
+                },
+                "scrap_number": {
+                    "type": "string"
+                },
+                "store_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -8327,33 +8261,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.UpdateAdminReturnRequest": {
-            "type": "object",
-            "required": [
-                "old_tracking",
-                "return_number",
-                "return_reason",
-                "return_type",
-                "scrap_number"
-            ],
-            "properties": {
-                "old_tracking": {
-                    "type": "string"
-                },
-                "return_number": {
-                    "type": "string"
-                },
-                "return_reason": {
-                    "type": "string"
-                },
-                "return_type": {
-                    "type": "string"
-                },
-                "scrap_number": {
-                    "type": "string"
-                }
-            }
-        },
         "controllers.UpdateBoxRequest": {
             "type": "object",
             "required": [
@@ -8404,25 +8311,6 @@ const docTemplate = `{
                 "complained": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "controllers.UpdateDataReturnRequest": {
-            "type": "object",
-            "required": [
-                "old_tracking",
-                "return_reason",
-                "return_type"
-            ],
-            "properties": {
-                "old_tracking": {
-                    "type": "string"
-                },
-                "return_reason": {
-                    "type": "string"
-                },
-                "return_type": {
-                    "type": "string"
                 }
             }
         },
@@ -8618,6 +8506,21 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "newpassword123"
+                }
+            }
+        },
+        "controllers.UpdateReturnRequest": {
+            "type": "object",
+            "required": [
+                "return_number",
+                "scrap_number"
+            ],
+            "properties": {
+                "return_number": {
+                    "type": "string"
+                },
+                "scrap_number": {
+                    "type": "string"
                 }
             }
         },
@@ -9348,8 +9251,14 @@ const docTemplate = `{
                 "channel_id": {
                     "type": "integer"
                 },
+                "create_operator": {
+                    "$ref": "#/definitions/models.UserResponse"
+                },
                 "created_at": {
                     "type": "string"
+                },
+                "created_by": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -9395,8 +9304,14 @@ const docTemplate = `{
                 "store_id": {
                     "type": "integer"
                 },
+                "update_operator": {
+                    "$ref": "#/definitions/models.UserResponse"
+                },
                 "updated_at": {
                     "type": "string"
+                },
+                "updated_by": {
+                    "type": "integer"
                 }
             }
         },
