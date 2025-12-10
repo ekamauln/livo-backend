@@ -4679,6 +4679,170 @@
                 }
             }
         },
+        "/api/reports/boxes-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get box usage count from QC Ribbon and QC Online details with date range filtering, excluding PC/Packing boxes (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get box count reports",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by box code or name (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.BoxCountReportsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/handout-outbounds": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get outbound reports with date filtering and exact slug search, without pagination (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get outbound reports",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by date (YYYY-MM-DD format)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by exact slug match",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.OutboundReportsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/returns": {
             "get": {
                 "security": [
@@ -6725,6 +6889,86 @@
                 }
             }
         },
+        "controllers.BoxCountReport": {
+            "type": "object",
+            "properties": {
+                "box_code": {
+                    "type": "string"
+                },
+                "box_id": {
+                    "type": "integer"
+                },
+                "box_name": {
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Added gorm:\"-\" to ignore this field",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.BoxUsageDetail"
+                    }
+                },
+                "online_count": {
+                    "type": "integer"
+                },
+                "ribbon_count": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "controllers.BoxCountReportsListResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                },
+                "reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.BoxCountReport"
+                    }
+                }
+            }
+        },
+        "controllers.BoxUsageDetail": {
+            "type": "object",
+            "properties": {
+                "box_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "description": "Added full name",
+                    "type": "string"
+                },
+                "order_ginee_id": {
+                    "type": "string"
+                },
+                "qc_by": {
+                    "description": "Added QC By user ID",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "source": {
+                    "description": "\"QC Ribbon\" or \"QC Online\"",
+                    "type": "string"
+                },
+                "tracking": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Added username",
+                    "type": "string"
+                }
+            }
+        },
         "controllers.BoxesListResponse": {
             "type": "object",
             "properties": {
@@ -7633,6 +7877,20 @@
                 },
                 "pagination": {
                     "$ref": "#/definitions/utilities.PaginationResponse"
+                }
+            }
+        },
+        "controllers.OutboundReportsListResponse": {
+            "type": "object",
+            "properties": {
+                "outbounds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.OutboundResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

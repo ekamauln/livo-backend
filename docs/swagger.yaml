@@ -20,6 +20,60 @@ definitions:
     required:
     - role_name
     type: object
+  controllers.BoxCountReport:
+    properties:
+      box_code:
+        type: string
+      box_id:
+        type: integer
+      box_name:
+        type: string
+      details:
+        description: Added gorm:"-" to ignore this field
+        items:
+          $ref: '#/definitions/controllers.BoxUsageDetail'
+        type: array
+      online_count:
+        type: integer
+      ribbon_count:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  controllers.BoxCountReportsListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      reports:
+        items:
+          $ref: '#/definitions/controllers.BoxCountReport'
+        type: array
+    type: object
+  controllers.BoxUsageDetail:
+    properties:
+      box_name:
+        type: string
+      created_at:
+        type: string
+      full_name:
+        description: Added full name
+        type: string
+      order_ginee_id:
+        type: string
+      qc_by:
+        description: Added QC By user ID
+        type: integer
+      quantity:
+        type: integer
+      source:
+        description: '"QC Ribbon" or "QC Online"'
+        type: string
+      tracking:
+        type: string
+      username:
+        description: Added username
+        type: string
+    type: object
   controllers.BoxesListResponse:
     properties:
       boxes:
@@ -634,6 +688,15 @@ definitions:
         type: array
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
+    type: object
+  controllers.OutboundReportsListResponse:
+    properties:
+      outbounds:
+        items:
+          $ref: '#/definitions/models.OutboundResponse'
+        type: array
+      total:
+        type: integer
     type: object
   controllers.OutboundsDailyCount:
     properties:
@@ -4572,6 +4635,108 @@ paths:
       summary: Update product
       tags:
       - products
+  /api/reports/boxes-count:
+    get:
+      consumes:
+      - application/json
+      description: Get box usage count from QC Ribbon and QC Online details with date
+        range filtering, excluding PC/Packing boxes (logged-in users only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by box code or name (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.BoxCountReportsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get box count reports
+      tags:
+      - reports
+  /api/reports/handout-outbounds:
+    get:
+      consumes:
+      - application/json
+      description: Get outbound reports with date filtering and exact slug search,
+        without pagination (logged-in users only)
+      parameters:
+      - description: Filter by date (YYYY-MM-DD format)
+        in: query
+        name: date
+        type: string
+      - description: Search by exact slug match
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.OutboundReportsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get outbound reports
+      tags:
+      - reports
   /api/returns:
     get:
       consumes:
