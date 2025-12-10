@@ -3941,12 +3941,6 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Pending pick request with coordinator credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.PendingPickRequest'
       produces:
       - application/json
       responses:
@@ -4076,6 +4070,21 @@ paths:
       - application/json
       description: Retrieve all orders currently assigned to all pickers that are
         in "picking process" status. and filter by current date.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by Order Ginee ID or Tracking number
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:

@@ -453,20 +453,12 @@ func (moc *MobileOrderController) BulkAssignPicker(c *gin.Context) {
 			continue
 		}
 
-		if order.ProcessingStatus == "picking process" {
+		// Only allow assignment for "ready to pick" or "pending picking" status
+		if order.ProcessingStatus != "ready to pick" && order.ProcessingStatus != "pending picking" {
 			skippedOrders = append(skippedOrders, SkippedAssignment{
 				Index:    i,
 				Tracking: tracking,
-				Reason:   "Order already in picking process",
-			})
-			continue
-		}
-
-		if order.ProcessingStatus == "qc process" || order.ProcessingStatus == "completed" {
-			skippedOrders = append(skippedOrders, SkippedAssignment{
-				Index:    i,
-				Tracking: tracking,
-				Reason:   fmt.Sprintf("Cannot assign when status is '%s'", order.ProcessingStatus),
+				Reason:   fmt.Sprintf("Cannot assign order with status '%s'. Only 'ready to pick' or 'pending picking' orders can be assigned", order.ProcessingStatus),
 			})
 			continue
 		}

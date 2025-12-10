@@ -926,14 +926,9 @@ func (oc *OrderController) AssignPicker(c *gin.Context) {
 		return
 	}
 
-	// Check if order is already in picking process or completed
-	if order.ProcessingStatus == "picking process" {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Order already being picked", "this order is already in picking process")
-		return
-	}
-
-	if order.ProcessingStatus == "qc process" || order.ProcessingStatus == "completed" {
-		utilities.ErrorResponse(c, http.StatusBadRequest, "Order cannot be assigned", fmt.Sprintf("cannot assign picker when processing status is '%s'", order.ProcessingStatus))
+	// Check if order is not "ready to pick"
+	if order.ProcessingStatus != "ready to pick" && order.ProcessingStatus != "pending picking" {
+		utilities.ErrorResponse(c, http.StatusBadRequest, "Cannot assign picker", "Only orders that are in 'ready to pick' or 'pending picking' status can be assigned to a picker. Status now is '"+order.ProcessingStatus+"'.")
 		return
 	}
 
@@ -979,7 +974,6 @@ func (oc *OrderController) AssignPicker(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Order ID to pending picking process"
-// @Param request body PendingPickRequest true "Pending pick request with coordinator credentials"
 // @Success 200 {object} utilities.Response{data=models.OrderResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
@@ -1062,6 +1056,9 @@ func (oc *OrderController) PendingPickOrders(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param search query string false "Search by Order Ginee ID or Tracking number"
 // @Success 200 {object} utilities.Response{data=[]models.OrderResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
