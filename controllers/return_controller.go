@@ -399,6 +399,9 @@ func (rc *ReturnController) UpdateDataReturn(c *gin.Context) {
 	}
 
 	// Update return data fields
+	ret.OldTracking = req.OldTracking
+	ret.ReturnType = req.ReturnType
+	ret.ReturnReason = req.ReturnReason
 	ret.ReturnNumber = req.ReturnNumber
 	ret.ScrapNumber = req.ScrapNumber
 	ret.UpdatedBy = &userIDUint
@@ -407,6 +410,41 @@ func (rc *ReturnController) UpdateDataReturn(c *gin.Context) {
 	if err := rc.DB.Save(&ret).Error; err != nil {
 		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to update return", err.Error())
 		return
+	}
+
+	// Check if return details are empty
+	var detailCount int64
+	rc.DB.Model(&models.ReturnDetail{}).Where("return_id = ?", ret.ID).Count(&detailCount)
+
+	// If return details are empty, copy from order details
+	if detailCount == 0 && ret.OldTracking != "" {
+		// Find order by old_tracking
+		var order models.Order
+		if err := rc.DB.Preload("OrderDetails").Where("tracking = ?", ret.OldTracking).First(&order).Error; err == nil {
+			// Create return details based on order details
+			for _, orderDetail := range order.OrderDetails {
+				// Find product by SKU from order detail
+				var product models.Product
+				if err := rc.DB.Where("sku = ?", orderDetail.Sku).First(&product).Error; err != nil {
+					// Skip products not found
+					continue
+				}
+
+				returnDetail := models.ReturnDetail{
+					ReturnID:  ret.ID,
+					ProductID: product.ID,
+					Quantity:  orderDetail.Quantity,
+				}
+
+				rc.DB.Create(&returnDetail)
+			}
+		}
+
+		// Update order_ginee_id from the order
+		if order.ID != 0 {
+			ret.OrderGineeID = order.OrderGineeID
+			rc.DB.Save(&ret)
+		}
 	}
 
 	// Load updated return with relationships
@@ -449,6 +487,9 @@ type CreateReturnRequest struct {
 }
 
 type UpdateReturnRequest struct {
-	ReturnNumber string `json:"return_number" binding:"required"`
-	ScrapNumber  string `json:"scrap_number" binding:"required"`
+	OldTracking  string `json:"old_tracking" binding:"required"`
+	ReturnType   string `json:"return_type" binding:"required"`
+	ReturnReason string `json:"return_reason" binding:"required"`
+	ReturnNumber string `json:"return_number"`
+	ScrapNumber  string `json:"scrap_number"`
 }

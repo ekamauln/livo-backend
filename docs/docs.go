@@ -8512,11 +8512,21 @@ const docTemplate = `{
         "controllers.UpdateReturnRequest": {
             "type": "object",
             "required": [
-                "return_number",
-                "scrap_number"
+                "old_tracking",
+                "return_reason",
+                "return_type"
             ],
             "properties": {
+                "old_tracking": {
+                    "type": "string"
+                },
                 "return_number": {
+                    "type": "string"
+                },
+                "return_reason": {
+                    "type": "string"
+                },
+                "return_type": {
                     "type": "string"
                 },
                 "scrap_number": {

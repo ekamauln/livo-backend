@@ -1175,13 +1175,20 @@ definitions:
     type: object
   controllers.UpdateReturnRequest:
     properties:
+      old_tracking:
+        type: string
       return_number:
+        type: string
+      return_reason:
+        type: string
+      return_type:
         type: string
       scrap_number:
         type: string
     required:
-    - return_number
-    - scrap_number
+    - old_tracking
+    - return_reason
+    - return_type
     type: object
   controllers.UpdateSolutionComplainRequest:
     properties:
