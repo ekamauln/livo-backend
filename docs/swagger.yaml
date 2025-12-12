@@ -141,6 +141,21 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.ComplainDetailInReport:
+    properties:
+      complain_code:
+        type: string
+      complain_id:
+        type: integer
+      complain_updated_at:
+        type: string
+      fee_charge:
+        type: integer
+      order_ginee_id:
+        type: string
+      tracking:
+        type: string
+    type: object
   controllers.ComplainReportsListResponse:
     properties:
       complains:
@@ -1299,6 +1314,34 @@ definitions:
       is_active:
         example: true
         type: boolean
+    type: object
+  controllers.UserFeeReportWithDetails:
+    properties:
+      complain_details:
+        items:
+          $ref: '#/definitions/controllers.ComplainDetailInReport'
+        type: array
+      email:
+        type: string
+      full_name:
+        type: string
+      total_complaints:
+        type: integer
+      total_fee_charge:
+        type: integer
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  controllers.UserFeeReportsWithDetailsListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      reports:
+        items:
+          $ref: '#/definitions/controllers.UserFeeReportWithDetails'
+        type: array
     type: object
   controllers.UsersListResponse:
     properties:
@@ -4887,6 +4930,64 @@ paths:
       security:
       - BearerAuth: []
       summary: Get return reports
+      tags:
+      - reports
+  /api/reports/user-fees:
+    get:
+      consumes:
+      - application/json
+      description: Get user fee reports with detailed records, date filtering and
+        exact user search, with pagination (logged-in users only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by exact user ID match
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.UserFeeReportsWithDetailsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user fee reports
       tags:
       - reports
   /api/returns:

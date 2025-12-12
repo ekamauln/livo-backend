@@ -4981,6 +4981,98 @@
                 }
             }
         },
+        "/api/reports/user-fees": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get user fee reports with detailed records, date filtering and exact user search, with pagination (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get user fee reports",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by exact user ID match",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.UserFeeReportsWithDetailsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/returns": {
             "get": {
                 "security": [
@@ -7126,6 +7218,29 @@
                 }
             }
         },
+        "controllers.ComplainDetailInReport": {
+            "type": "object",
+            "properties": {
+                "complain_code": {
+                    "type": "string"
+                },
+                "complain_id": {
+                    "type": "integer"
+                },
+                "complain_updated_at": {
+                    "type": "string"
+                },
+                "fee_charge": {
+                    "type": "integer"
+                },
+                "order_ginee_id": {
+                    "type": "string"
+                },
+                "tracking": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.ComplainReportsListResponse": {
             "type": "object",
             "properties": {
@@ -8825,6 +8940,49 @@
                 "is_active": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "controllers.UserFeeReportWithDetails": {
+            "type": "object",
+            "properties": {
+                "complain_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.ComplainDetailInReport"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "total_complaints": {
+                    "type": "integer"
+                },
+                "total_fee_charge": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.UserFeeReportsWithDetailsListResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/utilities.PaginationResponse"
+                },
+                "reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/controllers.UserFeeReportWithDetails"
+                    }
                 }
             }
         },

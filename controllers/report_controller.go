@@ -572,6 +572,181 @@ func (rc *ReportController) GetComplainReports(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, message, response)
 }
 
+// GetUserFeeReports godoc
+// @Summary Get user fee reports
+// @Description Get user fee reports with detailed records, date filtering and exact user search, with pagination (logged-in users only)
+// @Tags reports
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param start_date query string false "Start date (YYYY-MM-DD format)"
+// @Param end_date query string false "End date (YYYY-MM-DD format)"
+// @Param search query string false "Search by exact user ID match"
+// @Success 200 {object} utilities.Response{data=UserFeeReportsWithDetailsListResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Router /api/reports/user-fees [get]
+func (rc *ReportController) GetUserFeeReports(c *gin.Context) {
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	// Parse date range parameters
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	// Parse search parameter (user ID)
+	search := c.Query("search")
+
+	var total int64
+
+	// Build date filter conditions for complains table
+	dateFilterCondition := "complains.deleted_at IS NULL"
+
+	if startDate != "" {
+		// Validate start date format
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid start_date format", "start_date must be in YYYY-MM-DD format")
+			return
+		}
+		dateFilterCondition += fmt.Sprintf(" AND complains.updated_at >= '%s 00:00:00'", startDate)
+	}
+
+	if endDate != "" {
+		// Validate end date format
+		if parsedEndDate, err := time.Parse("2006-01-02", endDate); err != nil {
+			utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid end_date format", "end_date must be in YYYY-MM-DD format")
+			return
+		} else {
+			// Add 24 hours to get the start of next day
+			nextDay := parsedEndDate.AddDate(0, 0, 1).Format("2006-01-02 00:00:00")
+			dateFilterCondition += fmt.Sprintf(" AND complains.updated_at < '%s'", nextDay)
+		}
+	}
+
+	// Build user filter condition
+	userFilterCondition := "complain_user_details.deleted_at IS NULL"
+	if search != "" {
+		userFilterCondition += fmt.Sprintf(" AND complain_user_details.operator_id = %s", search)
+	}
+
+	// First, get the data without pagination for counting unique users
+	countQuery := rc.DB.Table("complain_user_details").
+		Select("DISTINCT complain_user_details.operator_id").
+		Joins("INNER JOIN complains ON complains.id = complain_user_details.complain_id").
+		Where(dateFilterCondition).
+		Where(userFilterCondition)
+
+	// Get total count of unique users
+	if err := countQuery.Count(&total).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count user fee reports", err.Error())
+		return
+	}
+
+	// Step 1: Get user summary data
+	var userSummaries []UserFeeReportSummary
+	summaryQuery := rc.DB.Table("complain_user_details").
+		Select(`
+			complain_user_details.operator_id,
+			users.username,
+			users.full_name,
+			users.email,
+			COUNT(complain_user_details.id) as total_complaints,
+			SUM(complain_user_details.fee_charge) as total_fee_charge
+		`).
+		Joins("INNER JOIN complains ON complains.id = complain_user_details.complain_id").
+		Joins("INNER JOIN users ON users.id = complain_user_details.operator_id AND users.deleted_at IS NULL").
+		Where(dateFilterCondition).
+		Where(userFilterCondition).
+		Group("complain_user_details.operator_id, users.username, users.full_name, users.email").
+		Order("total_fee_charge DESC, users.username ASC").
+		Limit(limit).
+		Offset(offset)
+
+	if err := summaryQuery.Scan(&userSummaries).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve user fee summaries", err.Error())
+		return
+	}
+
+	// Step 2: Build the final reports with details
+	var userFeeReports []UserFeeReportWithDetails
+
+	for _, summary := range userSummaries {
+		// Get detailed records for this user
+		var details []ComplainDetailInReport
+		detailQuery := rc.DB.Table("complain_user_details").
+			Select(`
+				complains.id as complain_id,
+				complains.code as complain_code,
+				complains.tracking,
+				complains.order_ginee_id,
+				complain_user_details.fee_charge,
+				complains.updated_at as complain_updated_at
+			`).
+			Joins("INNER JOIN complains ON complains.id = complain_user_details.complain_id").
+			Where(dateFilterCondition).
+			Where("complain_user_details.deleted_at IS NULL").
+			Where("complain_user_details.operator_id = ?", summary.UserID).
+			Order("complains.updated_at DESC")
+
+		if err := detailQuery.Scan(&details).Error; err != nil {
+			utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve complain details", err.Error())
+			return
+		}
+
+		// Combine summary and details
+		report := UserFeeReportWithDetails{
+			UserID:          summary.UserID,
+			Username:        summary.Username,
+			FullName:        summary.FullName,
+			Email:           summary.Email,
+			TotalComplaints: summary.TotalComplaints,
+			TotalFeeCharge:  summary.TotalFeeCharge,
+			ComplainDetails: details,
+		}
+
+		userFeeReports = append(userFeeReports, report)
+	}
+
+	response := UserFeeReportsWithDetailsListResponse{
+		Reports: userFeeReports,
+		Pagination: utilities.PaginationResponse{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+		},
+	}
+
+	// Build success message
+	message := "User fee reports retrieved successfully"
+	var filters []string
+
+	if startDate != "" || endDate != "" {
+		var dateRange []string
+		if startDate != "" {
+			dateRange = append(dateRange, "from: "+startDate)
+		}
+		if endDate != "" {
+			dateRange = append(dateRange, "to: "+endDate)
+		}
+		filters = append(filters, "date: "+strings.Join(dateRange, ", "))
+	}
+
+	if search != "" {
+		filters = append(filters, "user ID: "+search)
+	}
+
+	if len(filters) > 0 {
+		message += fmt.Sprintf(" (filtered by %s)", strings.Join(filters, " | "))
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, message, response)
+}
+
 // Request/Response structs
 // BoxUsageDetail represents individual box usage record
 type BoxUsageDetail struct {
@@ -619,4 +794,41 @@ type ReturnReportsListResponse struct {
 type ComplainReportsListResponse struct {
 	Complains []models.ComplainResponse `json:"complains"`
 	Total     int                       `json:"total"`
+}
+
+// UserFeeReportSummary represents user fee report summary data (without details)
+type UserFeeReportSummary struct {
+	UserID          uint   `json:"user_id"`
+	Username        string `json:"username"`
+	FullName        string `json:"full_name"`
+	Email           string `json:"email"`
+	TotalComplaints int    `json:"total_complaints"`
+	TotalFeeCharge  uint   `json:"total_fee_charge"`
+}
+
+// ComplainDetailInReport represents individual complain details in user fee report
+type ComplainDetailInReport struct {
+	ComplainID        uint      `json:"complain_id"`
+	ComplainCode      string    `json:"complain_code"`
+	Tracking          string    `json:"tracking"`
+	OrderGineeID      string    `json:"order_ginee_id"`
+	FeeCharge         uint      `json:"fee_charge"`
+	ComplainUpdatedAt time.Time `json:"complain_updated_at"`
+}
+
+// UserFeeReportWithDetails represents user fee report data with detailed records
+type UserFeeReportWithDetails struct {
+	UserID          uint                     `json:"user_id"`
+	Username        string                   `json:"username"`
+	FullName        string                   `json:"full_name"`
+	Email           string                   `json:"email"`
+	TotalComplaints int                      `json:"total_complaints"`
+	TotalFeeCharge  uint                     `json:"total_fee_charge"`
+	ComplainDetails []ComplainDetailInReport `json:"complain_details"`
+}
+
+// UserFeeReportsWithDetailsListResponse represents the response for user fee reports with details
+type UserFeeReportsWithDetailsListResponse struct {
+	Reports    []UserFeeReportWithDetails   `json:"reports"`
+	Pagination utilities.PaginationResponse `json:"pagination"`
 }
