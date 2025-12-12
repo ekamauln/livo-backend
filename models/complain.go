@@ -26,6 +26,7 @@ type Complain struct {
 	ProductDetails []ComplainProductDetail `gorm:"foreignKey:ComplainID" json:"product_details"`
 	UserDetails    []ComplainUserDetail    `gorm:"foreignKey:ComplainID" json:"user_details"`
 	Order          *Order                  `gorm:"-" json:"order,omitempty"`
+	Return         *Return                 `gorm:"-" json:"return,omitempty"`
 	Channel        *Channel                `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
 	Store          *Store                  `gorm:"foreignKey:StoreID" json:"store,omitempty"`
 	Creator        *User                   `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
@@ -103,6 +104,7 @@ type ComplainResponse struct {
 	ProductDetails []ComplainProductDetailResponse `json:"product_details"`
 	UserDetails    []ComplainUserDetailResponse    `json:"user_details"`
 	Order          *OrderResponse                  `json:"order,omitempty"`   // Order info (includes OrderGineeID)
+	Return         *ReturnResponse                 `json:"return,omitempty"`  // Return info (if tracking exists in old_tracking)
 	Channel        *ChannelResponse                `json:"channel,omitempty"` // Channel info
 	Store          *StoreResponse                  `json:"store,omitempty"`   // Store info
 	Creator        *UserResponse                   `json:"creator,omitempty"` // User who created the complain
@@ -172,6 +174,12 @@ func (c *Complain) ToComplainResponse() ComplainResponse {
 	if c.Order != nil {
 		orderResponse := c.Order.ToOrderResponse()
 		response.Order = &orderResponse
+	}
+
+	// Include return data if loaded
+	if c.Return != nil {
+		returnResponse := c.Return.ToReturnResponse()
+		response.Return = &returnResponse
 	}
 
 	// Include channel data if loaded

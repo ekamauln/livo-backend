@@ -33,7 +33,7 @@ func NewComplainController(db *gorm.DB) *ComplainController {
 // @Param limit query int false "Items per page" default(10)
 // @Param start_date query string false "Start date (YYYY-MM-DD format)"
 // @Param end_date query string false "End date (YYYY-MM-DD format)"
-// @Param search query string false "Search by complain code, tracking (partial match)"
+// @Param search query string false "Search by complain code, tracking, order_ginee_id (partial match)"
 // @Success 200 {object} utilities.Response{data=ComplainsListResponse}
 // @Failure 400 {object} utilities.Response
 // @Failure 401 {object} utilities.Response
@@ -115,10 +115,21 @@ func (cc *ComplainController) GetComplains(c *gin.Context) {
 		if complains[i].Tracking != "" {
 			var order models.Order
 			if err := cc.DB.Preload("OrderDetails").
-				Preload("Picker.UserRoles.Role").
-				Preload("Picker.UserRoles.Assigner").
+				Preload("PickOperator.UserRoles.Role").
+				Preload("PickOperator.UserRoles.Assigner").
 				Where("tracking = ?", complains[i].Tracking).First(&order).Error; err == nil {
 				complains[i].Order = &order
+			}
+
+			// Load return data if tracking exists in old_tracking
+			var returnData models.Return
+			if err := cc.DB.Preload("ReturnDetails.Product").
+				Preload("Channel").
+				Preload("Store").
+				Preload("CreateOperator").
+				Preload("UpdateOperator").
+				Where("old_tracking = ?", complains[i].Tracking).First(&returnData).Error; err == nil {
+				complains[i].Return = &returnData
 			}
 		}
 	}
@@ -197,10 +208,21 @@ func (cc *ComplainController) GetComplain(c *gin.Context) {
 	if complain.Tracking != "" {
 		var order models.Order
 		if err := cc.DB.Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			Where("tracking = ?", complain.Tracking).First(&order).Error; err == nil {
 			complain.Order = &order
+		}
+
+		// Load return data if tracking exists in old_tracking
+		var returnData models.Return
+		if err := cc.DB.Preload("ReturnDetails.Product").
+			Preload("Channel").
+			Preload("Store").
+			Preload("CreateOperator").
+			Preload("UpdateOperator").
+			Where("old_tracking = ?", complain.Tracking).First(&returnData).Error; err == nil {
+			complain.Return = &returnData
 		}
 	}
 
@@ -468,8 +490,8 @@ func (cc *ComplainController) UpdateSolutionComplain(c *gin.Context) {
 	if complain.Tracking != "" {
 		var order models.Order
 		if err := cc.DB.Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			Where("tracking = ?", complain.Tracking).First(&order).Error; err == nil {
 			complain.Order = &order
 		}
@@ -535,8 +557,8 @@ func (cc *ComplainController) UpdateCheckComplain(c *gin.Context) {
 	if complain.Tracking != "" {
 		var order models.Order
 		if err := cc.DB.Preload("OrderDetails").
-			Preload("Picker.UserRoles.Role").
-			Preload("Picker.UserRoles.Assigner").
+			Preload("PickOperator.UserRoles.Role").
+			Preload("PickOperator.UserRoles.Assigner").
 			Where("tracking = ?", complain.Tracking).First(&order).Error; err == nil {
 			complain.Order = &order
 		}

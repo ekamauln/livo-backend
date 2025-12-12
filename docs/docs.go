@@ -955,7 +955,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by complain code, tracking (partial match)",
+                        "description": "Search by complain code, tracking, order_ginee_id (partial match)",
                         "name": "search",
                         "in": "query"
                     }
@@ -8752,6 +8752,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.ComplainProductDetailResponse"
                     }
+                },
+                "return": {
+                    "description": "Return info (if tracking exists in old_tracking)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ReturnResponse"
+                        }
+                    ]
                 },
                 "solution": {
                     "type": "string"

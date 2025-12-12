@@ -1332,6 +1332,10 @@ definitions:
         items:
           $ref: '#/definitions/models.ComplainProductDetailResponse'
         type: array
+      return:
+        allOf:
+        - $ref: '#/definitions/models.ReturnResponse'
+        description: Return info (if tracking exists in old_tracking)
       solution:
         type: string
       store:
@@ -2357,7 +2361,7 @@ paths:
         in: query
         name: end_date
         type: string
-      - description: Search by complain code, tracking (partial match)
+      - description: Search by complain code, tracking, order_ginee_id (partial match)
         in: query
         name: search
         type: string
