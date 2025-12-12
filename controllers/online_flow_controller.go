@@ -218,14 +218,86 @@ func (ofc *OnlineFlowController) buildOnlineFlow(tracking string) OnlineFlowResp
 
 	// 3. Query Order (LAST)
 	var order models.Order
-	if err := ofc.DB.Where("tracking = ?", tracking).First(&order).Error; err == nil {
-		response.Order = &OnlineOrderFlowInfo{
+	if err := ofc.DB.Preload("AssignOperator").
+		Preload("PickOperator").
+		Preload("PendingOperator").
+		Preload("ChangeOperator").
+		Preload("CancelOperator").
+		Where("tracking = ?", tracking).First(&order).Error; err == nil {
+		orderInfo := OnlineOrderFlowInfo{
 			Tracking:         order.Tracking,
 			ProcessingStatus: order.ProcessingStatus,
 			OrderGineeID:     order.OrderGineeID,
 			Complained:       order.Complained,
 			CreatedAt:        order.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
+
+		// Add assigned info if exists
+		if order.AssignedBy != nil && order.AssignOperator != nil {
+			orderInfo.AssignedBy = &OnlineOperatorFlowInfo{
+				ID:       order.AssignOperator.ID,
+				Username: order.AssignOperator.Username,
+				FullName: order.AssignOperator.FullName,
+			}
+			if order.AssignedAt != nil {
+				assignedAt := order.AssignedAt.Format("2006-01-02T15:04:05Z07:00")
+				orderInfo.AssignedAt = &assignedAt
+			}
+		}
+
+		// Add picked info if exists
+		if order.PickedBy != nil && order.PickOperator != nil {
+			orderInfo.PickedBy = &OnlineOperatorFlowInfo{
+				ID:       order.PickOperator.ID,
+				Username: order.PickOperator.Username,
+				FullName: order.PickOperator.FullName,
+			}
+			if order.PickedAt != nil {
+				pickedAt := order.PickedAt.Format("2006-01-02T15:04:05Z07:00")
+				orderInfo.PickedAt = &pickedAt
+			}
+		}
+
+		// Add pending info if exists
+		if order.PendingBy != nil && order.PendingOperator != nil {
+			orderInfo.PendingBy = &OnlineOperatorFlowInfo{
+				ID:       order.PendingOperator.ID,
+				Username: order.PendingOperator.Username,
+				FullName: order.PendingOperator.FullName,
+			}
+			if order.PendingAt != nil {
+				pendingAt := order.PendingAt.Format("2006-01-02T15:04:05Z07:00")
+				orderInfo.PendingAt = &pendingAt
+			}
+		}
+
+		// Add changed info if exists
+		if order.ChangedBy != nil && order.ChangeOperator != nil {
+			orderInfo.ChangedBy = &OnlineOperatorFlowInfo{
+				ID:       order.ChangeOperator.ID,
+				Username: order.ChangeOperator.Username,
+				FullName: order.ChangeOperator.FullName,
+			}
+			if order.ChangedAt != nil {
+				changedAt := order.ChangedAt.Format("2006-01-02T15:04:05Z07:00")
+				orderInfo.ChangedAt = &changedAt
+			}
+		}
+
+		// Add cancelled info if exists
+		if order.CancelledBy != nil && order.CancelOperator != nil {
+			orderInfo.CancelledBy = &OnlineOperatorFlowInfo{
+				ID:       order.CancelOperator.ID,
+				Username: order.CancelOperator.Username,
+				FullName: order.CancelOperator.FullName,
+			}
+			if order.CancelledAt != nil {
+				cancelledAt := order.CancelledAt.Format("2006-01-02T15:04:05Z07:00")
+				orderInfo.CancelledAt = &cancelledAt
+			}
+		}
+
+		response.Order = &orderInfo
 	}
 
 	return response
@@ -251,11 +323,21 @@ type QcOnlineFlowInfo struct {
 }
 
 type OnlineOrderFlowInfo struct {
-	Tracking         string `json:"tracking"`
-	ProcessingStatus string `json:"processing_status"`
-	OrderGineeID     string `json:"order_ginee_id"`
-	Complained       bool   `json:"complained"`
-	CreatedAt        string `json:"created_at"`
+	Tracking         string                  `json:"tracking"`
+	ProcessingStatus string                  `json:"processing_status"`
+	OrderGineeID     string                  `json:"order_ginee_id"`
+	Complained       bool                    `json:"complained"`
+	CreatedAt        string                  `json:"created_at"`
+	AssignedBy       *OnlineOperatorFlowInfo `json:"assigned_by,omitempty"`
+	AssignedAt       *string                 `json:"assigned_at,omitempty"`
+	PickedBy         *OnlineOperatorFlowInfo `json:"picked_by,omitempty"`
+	PickedAt         *string                 `json:"picked_at,omitempty"`
+	PendingBy        *OnlineOperatorFlowInfo `json:"pending_by,omitempty"`
+	PendingAt        *string                 `json:"pending_at,omitempty"`
+	ChangedBy        *OnlineOperatorFlowInfo `json:"changed_by,omitempty"`
+	ChangedAt        *string                 `json:"changed_at,omitempty"`
+	CancelledBy      *OnlineOperatorFlowInfo `json:"cancelled_by,omitempty"`
+	CancelledAt      *string                 `json:"cancelled_at,omitempty"`
 }
 
 type OnlineOutboundFlowInfo struct {

@@ -7773,6 +7773,24 @@ const docTemplate = `{
         "controllers.OnlineOrderFlowInfo": {
             "type": "object",
             "properties": {
+                "assigned_at": {
+                    "type": "string"
+                },
+                "assigned_by": {
+                    "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
+                },
+                "cancelled_at": {
+                    "type": "string"
+                },
+                "cancelled_by": {
+                    "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
+                },
+                "changed_at": {
+                    "type": "string"
+                },
+                "changed_by": {
+                    "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
+                },
                 "complained": {
                     "type": "boolean"
                 },
@@ -7781,6 +7799,18 @@ const docTemplate = `{
                 },
                 "order_ginee_id": {
                     "type": "string"
+                },
+                "pending_at": {
+                    "type": "string"
+                },
+                "pending_by": {
+                    "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
+                },
+                "picked_at": {
+                    "type": "string"
+                },
+                "picked_by": {
+                    "$ref": "#/definitions/controllers.OnlineOperatorFlowInfo"
                 },
                 "processing_status": {
                     "type": "string"
@@ -8185,6 +8215,24 @@ const docTemplate = `{
         "controllers.RibbonOrderFlowInfo": {
             "type": "object",
             "properties": {
+                "assigned_at": {
+                    "type": "string"
+                },
+                "assigned_by": {
+                    "$ref": "#/definitions/controllers.RibbonOperatorFlowInfo"
+                },
+                "cancelled_at": {
+                    "type": "string"
+                },
+                "cancelled_by": {
+                    "$ref": "#/definitions/controllers.RibbonOperatorFlowInfo"
+                },
+                "changed_at": {
+                    "type": "string"
+                },
+                "changed_by": {
+                    "$ref": "#/definitions/controllers.RibbonOperatorFlowInfo"
+                },
                 "complained": {
                     "type": "boolean"
                 },
@@ -8193,6 +8241,18 @@ const docTemplate = `{
                 },
                 "order_ginee_id": {
                     "type": "string"
+                },
+                "pending_at": {
+                    "type": "string"
+                },
+                "pending_by": {
+                    "$ref": "#/definitions/controllers.RibbonOperatorFlowInfo"
+                },
+                "picked_at": {
+                    "type": "string"
+                },
+                "picked_by": {
+                    "$ref": "#/definitions/controllers.RibbonOperatorFlowInfo"
                 },
                 "processing_status": {
                     "type": "string"

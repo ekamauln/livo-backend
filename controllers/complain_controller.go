@@ -96,8 +96,8 @@ func (cc *ComplainController) GetComplains(c *gin.Context) {
 	// ADDED: Preload relationships for complete data
 	if err := query.
 		Preload("ProductDetails.Product").
-		Preload("UserDetails.User.UserRoles.Role").
-		Preload("UserDetails.User.UserRoles.Assigner").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
 		Preload("Channel").
 		Preload("Store").
 		Preload("Creator.UserRoles.Role").
@@ -193,8 +193,8 @@ func (cc *ComplainController) GetComplain(c *gin.Context) {
 
 	var complain models.Complain
 	if err := cc.DB.Preload("ProductDetails.Product").
-		Preload("UserDetails.User.UserRoles.Role").
-		Preload("UserDetails.User.UserRoles.Assigner").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
 		Preload("Channel").
 		Preload("Store").
 		Preload("Creator.UserRoles.Role").
@@ -375,8 +375,8 @@ func (cc *ComplainController) CreateComplain(c *gin.Context) {
 
 	// Load the created complain with all relationships for complete response
 	cc.DB.Preload("ProductDetails.Product").
-		Preload("UserDetails.User.UserRoles.Role").
-		Preload("UserDetails.User.UserRoles.Assigner").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
 		Preload("Channel").
 		Preload("Store").
 		Preload("Creator.UserRoles.Role").
@@ -478,8 +478,8 @@ func (cc *ComplainController) UpdateSolutionComplain(c *gin.Context) {
 
 	// Load updated complain with all relationships
 	cc.DB.Preload("ProductDetails.Product").
-		Preload("UserDetails.User.UserRoles.Role").
-		Preload("UserDetails.User.UserRoles.Assigner").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
 		Preload("Channel").
 		Preload("Store").
 		Preload("Creator.UserRoles.Role").
@@ -545,8 +545,8 @@ func (cc *ComplainController) UpdateCheckComplain(c *gin.Context) {
 
 	// Load updated complain with all relationships
 	cc.DB.Preload("ProductDetails.Product").
-		Preload("UserDetails.User.UserRoles.Role").
-		Preload("UserDetails.User.UserRoles.Assigner").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
 		Preload("Channel").
 		Preload("Store").
 		Preload("Creator.UserRoles.Role").
