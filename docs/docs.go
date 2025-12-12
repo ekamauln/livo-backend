@@ -4778,6 +4778,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/reports/handout-complains": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get complain reports with date filtering and exact complain type search, without pagination (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get complain reports",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by date (YYYY-MM-DD format)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.ComplainReportsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/reports/handout-outbounds": {
             "get": {
                 "security": [
@@ -4823,6 +4889,78 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/controllers.OutboundReportsListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utilities.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/handout-returns": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get return reports with date filtering and exact return type search, without pagination (logged-in users only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get return reports",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by date (YYYY-MM-DD format)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by exact return type match",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utilities.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.ReturnReportsListResponse"
                                         }
                                     }
                                 }
@@ -6995,6 +7133,20 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.ComplainReportsListResponse": {
+            "type": "object",
+            "properties": {
+                "complains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ComplainResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "controllers.ComplainUserDetailRequest": {
             "type": "object",
             "required": [
@@ -8150,6 +8302,20 @@ const docTemplate = `{
                 "role_name": {
                     "type": "string",
                     "example": "manager"
+                }
+            }
+        },
+        "controllers.ReturnReportsListResponse": {
+            "type": "object",
+            "properties": {
+                "returns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ReturnResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

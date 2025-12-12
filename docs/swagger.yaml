@@ -141,6 +141,15 @@ definitions:
       pagination:
         $ref: '#/definitions/utilities.PaginationResponse'
     type: object
+  controllers.ComplainReportsListResponse:
+    properties:
+      complains:
+        items:
+          $ref: '#/definitions/models.ComplainResponse'
+        type: array
+      total:
+        type: integer
+    type: object
   controllers.ComplainUserDetailRequest:
     properties:
       fee_charge:
@@ -927,6 +936,15 @@ definitions:
         type: string
     required:
     - role_name
+    type: object
+  controllers.ReturnReportsListResponse:
+    properties:
+      returns:
+        items:
+          $ref: '#/definitions/models.ReturnResponse'
+        type: array
+      total:
+        type: integer
     type: object
   controllers.ReturnsListResponse:
     properties:
@@ -4743,6 +4761,46 @@ paths:
       summary: Get box count reports
       tags:
       - reports
+  /api/reports/handout-complains:
+    get:
+      consumes:
+      - application/json
+      description: Get complain reports with date filtering and exact complain type
+        search, without pagination (logged-in users only)
+      parameters:
+      - description: Filter by date (YYYY-MM-DD format)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ComplainReportsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get complain reports
+      tags:
+      - reports
   /api/reports/handout-outbounds:
     get:
       consumes:
@@ -4785,6 +4843,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Get outbound reports
+      tags:
+      - reports
+  /api/reports/handout-returns:
+    get:
+      consumes:
+      - application/json
+      description: Get return reports with date filtering and exact return type search,
+        without pagination (logged-in users only)
+      parameters:
+      - description: Filter by date (YYYY-MM-DD format)
+        in: query
+        name: date
+        type: string
+      - description: Search by exact return type match
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.ReturnReportsListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get return reports
       tags:
       - reports
   /api/returns:

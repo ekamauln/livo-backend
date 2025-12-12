@@ -379,6 +379,199 @@ func (rc *ReportController) GetOutboundReports(c *gin.Context) {
 	utilities.SuccessResponse(c, http.StatusOK, message, response)
 }
 
+// GetReturnReports godoc
+// @Summary Get return reports
+// @Description Get return reports with date filtering and exact return type search, without pagination (logged-in users only)
+// @Tags reports
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param date query string false "Filter by date (YYYY-MM-DD format)"
+// @Param search query string false "Search by exact return type match"
+// @Success 200 {object} utilities.Response{data=ReturnReportsListResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Router /api/reports/handout-returns [get]
+func (rc *ReportController) GetReturnReports(c *gin.Context) {
+	// Parse date parameter
+	date := c.Query("date")
+
+	// Parse search parameter
+	search := c.Query("search")
+
+	var returns []models.Return
+	var total int64
+
+	// Build query for data retrieval
+	query := rc.DB.Model(&models.Return{})
+
+	// Apply date filter if provided (CHANGED: using updated_at instead of created_at)
+	if date != "" {
+		// Parse date and validate format
+		if parsedDate, err := time.Parse("2006-01-02", date); err != nil {
+			utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid date format", "date must be in YYYY-MM-DD format")
+			return
+		} else {
+			// Filter for the entire day (from 00:00:00 to 23:59:59)
+			startOfDay := parsedDate.Format("2006-01-02 00:00:00")
+			endOfDay := parsedDate.AddDate(0, 0, 1).Format("2006-01-02 00:00:00")
+			query = query.Where("updated_at >= ? AND updated_at < ?", startOfDay, endOfDay)
+		}
+	}
+
+	// Apply search filter if provided (EXACT MATCH)
+	if search != "" {
+		query = query.Where("return_type = ?", search)
+	}
+
+	// Get total count with filters
+	if err := query.Count(&total).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count return reports", err.Error())
+		return
+	}
+
+	// Get all return records with preloaded relationships
+	if err := query.
+		Preload("ReturnDetails", "deleted_at IS NULL"). // Load return details (non-deleted only)
+		Preload("ReturnDetails.Product").               // Load product info for each detail
+		Preload("Channel").                             // Load channel info
+		Preload("Store").                               // Load store info
+		Preload("CreateOperator").                      // Load create operator info
+		Preload("UpdateOperator").                      // Load update operator info
+		Order("id DESC").
+		Find(&returns).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve return reports", err.Error())
+		return
+	}
+
+	// Manually load order data for each return using OldTracking
+	for i := range returns {
+		if returns[i].OldTracking != "" {
+			var order models.Order
+			if err := rc.DB.
+				Preload("OrderDetails").
+				Preload("PickOperator").
+				Preload("PickOperator.UserRoles.Role").
+				Preload("PickOperator.UserRoles.Assigner").
+				Where("tracking = ?", returns[i].OldTracking).
+				First(&order).Error; err == nil {
+				returns[i].Order = &order
+			}
+		}
+	}
+
+	// Convert to response format
+	returnResponses := make([]models.ReturnResponse, len(returns))
+	for i, ret := range returns {
+		returnResponses[i] = ret.ToReturnResponse()
+	}
+
+	response := ReturnReportsListResponse{
+		Returns: returnResponses,
+		Total:   int(total),
+	}
+
+	// Build success message
+	message := "Return reports retrieved successfully"
+	var filters []string
+
+	if date != "" {
+		filters = append(filters, "date: "+date)
+	}
+
+	if search != "" {
+		filters = append(filters, "exact return type: "+search)
+	}
+
+	if len(filters) > 0 {
+		message += fmt.Sprintf(" (filtered by %s)", strings.Join(filters, " | "))
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, message, response)
+}
+
+// GetComplainReports godoc
+// @Summary Get complain reports
+// @Description Get complain reports with date filtering and exact complain type search, without pagination (logged-in users only)
+// @Tags reports
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param date query string false "Filter by date (YYYY-MM-DD format)"
+// @Success 200 {object} utilities.Response{data=ComplainReportsListResponse}
+// @Failure 400 {object} utilities.Response
+// @Failure 401 {object} utilities.Response
+// @Failure 403 {object} utilities.Response
+// @Router /api/reports/handout-complains [get]
+func (rc *ReportController) GetComplainReports(c *gin.Context) {
+	// Parse date parameter
+	date := c.Query("date")
+
+	var complains []models.Complain
+	var total int64
+
+	// Build query for data retrieval
+	query := rc.DB.Model(&models.Complain{})
+
+	// Apply date filter if provided (using updated_at)
+	if date != "" {
+		// Parse date and validate format
+		if parsedDate, err := time.Parse("2006-01-02", date); err != nil {
+			utilities.ErrorResponse(c, http.StatusBadRequest, "Invalid date format", "date must be in YYYY-MM-DD format")
+			return
+		} else {
+			// Filter for the entire day (from 00:00:00 to 23:59:59)
+			startOfDay := parsedDate.Format("2006-01-02 00:00:00")
+			endOfDay := parsedDate.AddDate(0, 0, 1).Format("2006-01-02 00:00:00")
+			query = query.Where("updated_at >= ? AND updated_at < ?", startOfDay, endOfDay)
+		}
+	}
+
+	// Get total count with filters
+	if err := query.Count(&total).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to count complain reports", err.Error())
+		return
+	}
+
+	// Get all complain records with preloaded relationships (no pagination)
+	if err := query.Preload("Channel").
+		Preload("Store").
+		Preload("ProductDetails.Product").
+		Preload("UserDetails.Operator.UserRoles.Role").
+		Preload("UserDetails.Operator.UserRoles.Assigner").
+		Order("id DESC").
+		Find(&complains).Error; err != nil {
+		utilities.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve complain reports", err.Error())
+		return
+	}
+
+	// Convert to response format
+	complainResponses := make([]models.ComplainResponse, len(complains))
+	for i, comp := range complains {
+		complainResponses[i] = comp.ToComplainResponse()
+	}
+
+	response := ComplainReportsListResponse{
+		Complains: complainResponses,
+		Total:     int(total),
+	}
+
+	// Build success message
+	message := "Complain reports retrieved successfully"
+	var filters []string
+
+	if date != "" {
+		filters = append(filters, "date: "+date)
+	}
+
+	if len(filters) > 0 {
+		message += fmt.Sprintf(" (filtered by %s)", strings.Join(filters, " | "))
+	}
+
+	utilities.SuccessResponse(c, http.StatusOK, message, response)
+}
+
 // Request/Response structs
 // BoxUsageDetail represents individual box usage record
 type BoxUsageDetail struct {
@@ -413,5 +606,17 @@ type BoxCountReportsListResponse struct {
 // OutboundReportsListResponse represents the response for outbound reports
 type OutboundReportsListResponse struct {
 	Outbounds []models.OutboundResponse `json:"outbounds"`
+	Total     int                       `json:"total"`
+}
+
+// ReturnReportsListResponse represents the response for return reports
+type ReturnReportsListResponse struct {
+	Returns []models.ReturnResponse `json:"returns"`
+	Total   int                     `json:"total"`
+}
+
+// ComplainReportsListResponse represents the response for complain reports
+type ComplainReportsListResponse struct {
+	Complains []models.ComplainResponse `json:"complains"`
 	Total     int                       `json:"total"`
 }

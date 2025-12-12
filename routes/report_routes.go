@@ -17,5 +17,7 @@ func SetupReportRoutes(api *gin.RouterGroup, cfg *config.Config, reportControlle
 		// Public report routes
 		report.GET("/boxes-count", reportController.GetBoxReports)            // Get box count reports
 		report.GET("/handout-outbounds", reportController.GetOutboundReports) // Get handout outbound reports
+		report.GET("/handout-returns", reportController.GetReturnReports)     // Get return reports
+		report.GET("/handout-complains", reportController.GetComplainReports) // Get handout complain reports
 	}
 }
