@@ -799,6 +799,15 @@ definitions:
     - password
     - username
     type: object
+  controllers.PickOrdersListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/utilities.PaginationResponse'
+      pick_orders:
+        items:
+          $ref: '#/definitions/models.PickedOrderResponse'
+        type: array
+    type: object
   controllers.ProductsListResponse:
     properties:
       pagination:
@@ -1635,6 +1644,25 @@ definitions:
         $ref: '#/definitions/models.UserResponse'
       tracking:
         type: string
+      updated_at:
+        type: string
+    type: object
+  models.PickedOrderResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      order:
+        allOf:
+        - $ref: '#/definitions/models.OrderResponse'
+        description: Related data
+      order_id:
+        type: integer
+      picked_by:
+        type: integer
+      picker:
+        $ref: '#/definitions/models.UserResponse'
       updated_at:
         type: string
     type: object
@@ -4538,6 +4566,108 @@ paths:
       summary: Get outbound counts per day for current month
       tags:
       - outbounds
+  /api/picked-orders:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all picked orders with their details and search (logged
+        in users only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Start date (YYYY-MM-DD format)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD format)
+        in: query
+        name: end_date
+        type: string
+      - description: Search by Picker name, Order Ginee ID, or Tracking (partial match)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/controllers.PickOrdersListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all Picked Orders
+      tags:
+      - Picked-Orders
+  /api/picked-orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a picked order by ID (admin only)
+      parameters:
+      - description: Pick order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utilities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.PickedOrderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utilities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utilities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a picked order by ID
+      tags:
+      - Picked-Orders
   /api/products:
     get:
       consumes:
