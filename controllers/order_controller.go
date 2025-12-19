@@ -1075,8 +1075,7 @@ func (oc *OrderController) GetAssignedOrders(c *gin.Context) {
 
 	// Build query with necessary preloads and filters
 	query := oc.DB.Model(&models.Order{}).
-		Where("processing_status = ?", "picking process").
-		Where("DATE(assigned_at) = ?", time.Now().Format("2006-01-02")) // Filter by current date
+		Where("processing_status = ?", "picking process")
 
 	if search != "" {
 		// Search by Order Ginee ID or Tracking number

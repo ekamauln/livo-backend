@@ -560,7 +560,7 @@ func (moc *MobileOrderController) GetMobilePickedOrders(c *gin.Context) {
 	var total int64
 
 	// Build query with filters
-	query := moc.DB.Model(&models.Order{}).Where("processing_status = ?", "picking process").Where("DATE(assigned_at) = ?", time.Now().Format("2006-01-02")) // Filter by current date
+	query := moc.DB.Model(&models.Order{}).Where("processing_status = ?", "picking process")
 
 	// Apply search filter if provided
 	if search != "" {
